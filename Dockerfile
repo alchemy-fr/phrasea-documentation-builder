@@ -10,19 +10,13 @@ RUN chown -R node:node /srv/workspace \
 RUN apk add --no-interactive jq curl bash nano
 
 USER node
-COPY --chown=node:node ./docker/entrypoint.sh /entrypoint.sh
-COPY --chown=node:node ./getdoc.sh  ./
+COPY --chown=node:node --chmod=+x ./getdoc.sh  ./
 COPY --chown=node:node ./my-app  /srv/workspace/my-app
 
-RUN chmod +x ./getdoc.sh && ./getdoc.sh
+RUN ./getdoc.sh
 
 WORKDIR /srv/workspace/my-app
 
-RUN pnpm install && pnpm build && chmod +x /entrypoint.sh
+RUN pnpm install && pnpm build
 
 EXPOSE 3000
-
-ENTRYPOINT exec pnpm run start
-# ENTRYPOINT ["/entrypoint.sh"]
-# CMD ["pnpm", "run", "start"]
-
