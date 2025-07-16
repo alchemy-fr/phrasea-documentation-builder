@@ -1,0 +1,20 @@
+networks:
+    internal:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: ${SUBNET}
+
+services:
+    documentation:
+        image: ${REGISTRY_NAMESPACE}:${DOCKER_TAG}
+        command: [ "/bin/sh", "-c", "exit" ]
+        build:
+            context: ./
+            dockerfile: ./Dockerfile
+        networks:
+            - internal
+#        volumes:
+#            - ./my-app:/srv/workspace/my-app
+    #    extra_hosts:
+    #      - api-databox.${PHRASEA_DOMAIN}:${PS_GATEWAY_IP}

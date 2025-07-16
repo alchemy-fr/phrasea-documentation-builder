@@ -1,0 +1,8 @@
+{
+    "scripts": {"postinstall": "fumadocs-mdx"
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+    }
+}
