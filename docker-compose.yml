@@ -15,4 +15,4 @@ services:
         networks:
             - internal
         volumes:
-            - ./my-app/content:/srv/workspace/my-app/content
+            - ./my-app:/srv/workspace/my-app

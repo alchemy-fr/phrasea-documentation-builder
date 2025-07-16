@@ -12,6 +12,7 @@ dc up -d
 
 ## run dev mode
 ```shell
+dc run --rm documentation pnpm install   # only once
 dc run --rm documentation pnpm run dev
 ```
 
