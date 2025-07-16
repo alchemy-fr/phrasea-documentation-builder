@@ -9,6 +9,7 @@ dc build documentation
 ```shell
 dc up -d
 ```
+browse `http://174.30.0.2:3000/`
 
 ## run dev mode
 ```shell
