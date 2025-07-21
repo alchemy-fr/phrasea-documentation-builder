@@ -21,7 +21,7 @@ dc build documentation
 dc up -d
 ```
 
-Browse from your Host `http://localhost:3000/`
+Browse from your Docker Host `http://localhost:3000/` (if EXPOSITION_PORT is set to 3000)
 
 browse `http://174.30.0.2:3000/`
 
