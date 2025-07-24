@@ -38,7 +38,7 @@ const config = {
   // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'fr'],
   },
 
   presets: [
@@ -87,7 +87,10 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          {
+            {
+                type: 'localeDropdown',
+            },
+            {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
@@ -151,6 +154,7 @@ const config = {
         darkTheme: prismThemes.dracula,
       },
     }),
+    plugins: [require.resolve('docusaurus-lunr-search')],
 };
 
 export default config;
