@@ -3,17 +3,19 @@ networks:
         driver: bridge
         ipam:
             config:
-                - subnet: ${SUBNET}
+                - subnet: 174.40.0.0/16
 
 services:
     documentation:
         image: ${REGISTRY_NAMESPACE}:${DOCKER_TAG}
-        command: [ "pnpm", "run", "start" ]
+        command: [ "pnpm", "run", "serve" ]
         build:
             context: ./
-            dockerfile: ./Dockerfile
+            dockerfile: ./docusaurus/Dockerfile
         networks:
             - internal
-        volumes:
-            - ./my-app/content:/srv/workspace/my-app/content
-            - ./my-app/app:/srv/workspace/my-app/app
+        ports:
+            - "3078:3000"
+
+#        volumes:
+#            - ./documentation/phrasea:/srv/workspace/documentation/phrasea

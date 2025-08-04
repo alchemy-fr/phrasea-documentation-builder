@@ -1,22 +1,10 @@
-# phrasea-documentation-builder
+# documentation builder
 
-## build
-```shell
-dc build documentation
-```
+## serve static documentation by integrated web server
+`dc up -d`
 
-## run
-```shell
-dc up -d
-```
-browse `http://174.30.0.2:3000/`
+http://localhost:3078/
 
-## run dev mode
-```shell
-dc run --rm documentation pnpm run dev
-```
 
-## shell
-```shell
-dc run --rm documentation shell
-```
+## ~~dev mode~~
+~~`dc run --rm documentation "pnpm run start"`~~
