@@ -13,7 +13,9 @@ const config: Config = {
     baseUrl: "/",
    // onBrokenLinks: "throw",
     onBrokenLinks: "ignore",
-    onBrokenMarkdownLinks: "warn",
+    onBrokenAnchors: "ignore",
+    // onBrokenMarkdownLinks: "warn",
+    onBrokenMarkdownLinks: "ignore",
     favicon: "img/favicon.ico",
 
     // GitHub pages deployment config.
@@ -54,15 +56,6 @@ const config: Config = {
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
                 },
                 blog: false,
-                // blog: {
-                //     showReadingTime: true,
-                //     // Please change this to your repo.
-                //     // Remove this to remove the "edit this page" links.
-                //     editUrl:
-                //         "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/",
-                //     onInlineAuthors: "ignore",
-                //     onUntruncatedBlogPosts: "ignore",
-                // },
                 theme: {
                     customCss: require.resolve("./src/css/custom.css"),
                 },
@@ -90,26 +83,11 @@ const config: Config = {
                         position: "left",
                         label: "Tutorial",
                     },
-                    // {
-                    //     to: "/blog",
-                    //     label: "Blog",
-                    //     position: "left"
-                    // },
-                    // {
-                    //     label: "Petstore API",
-                    //     position: "left",
-                    //     to: "/docs/category/petstore-api",
-                    // },
                     {
                         label: "Databox API",
                         position: "left",
                         to: "/docs/category/databox-api",
                     },
-                    // {
-                    //     href: "https://github.com/facebook/docusaurus",
-                    //     label: "GitHub",
-                    //     position: "right",
-                    // },
                     {
                         type: 'localeDropdown',
                         position: 'left',
@@ -129,36 +107,6 @@ const config: Config = {
                             },
                         ],
                     },
-                    // {
-                    //     title: "Community",
-                    //     items: [
-                    //         {
-                    //             label: "Stack Overflow",
-                    //             href: "https://stackoverflow.com/questions/tagged/docusaurus",
-                    //         },
-                    //         {
-                    //             label: "Discord",
-                    //             href: "https://discordapp.com/invite/docusaurus",
-                    //         },
-                    //         {
-                    //             label: "Twitter",
-                    //             href: "https://twitter.com/docusaurus",
-                    //         },
-                    //     ],
-                    // },
-                    // {
-                    //     title: "More",
-                    //     items: [
-                    //         {
-                    //             label: "Blog",
-                    //             to: "/blog",
-                    //         },
-                    //         {
-                    //             label: "GitHub",
-                    //             href: "https://github.com/facebook/docusaurus",
-                    //         },
-                    //     ],
-                    // },
                 ],
                 copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
             },
@@ -177,97 +125,26 @@ const config: Config = {
                 ],
             },
             languageTabs: [
-                // {
-                //     highlight: "python",
-                //     language: "python",
-                //     logoClass: "python",
-                // },
                 {
                     highlight: "bash",
                     language: "curl",
                     logoClass: "curl",
                 },
-                // {
-                //     highlight: "csharp",
-                //     language: "csharp",
-                //     logoClass: "csharp",
-                // },
-                // {
-                //     highlight: "go",
-                //     language: "go",
-                //     logoClass: "go",
-                // },
                 {
                     highlight: "javascript",
                     language: "nodejs",
                     logoClass: "nodejs",
                 },
-                // {
-                //     highlight: "ruby",
-                //     language: "ruby",
-                //     logoClass: "ruby",
-                // },
                 {
                     highlight: "php",
                     language: "php",
                     logoClass: "php",
                 },
-                // {
-                //     highlight: "java",
-                //     language: "java",
-                //     logoClass: "java",
-                //     variant: "unirest",
-                // },
-                // {
-                //     highlight: "powershell",
-                //     language: "powershell",
-                //     logoClass: "powershell",
-                // },
-                // {
-                //     highlight: "dart",
-                //     language: "dart",
-                //     logoClass: "dart",
-                // },
                 {
                     highlight: "javascript",
                     language: "javascript",
                     logoClass: "javascript",
                 },
-                // {
-                //     highlight: "c",
-                //     language: "c",
-                //     logoClass: "c",
-                // },
-                // {
-                //     highlight: "objective-c",
-                //     language: "objective-c",
-                //     logoClass: "objective-c",
-                // },
-                // {
-                //     highlight: "ocaml",
-                //     language: "ocaml",
-                //     logoClass: "ocaml",
-                // },
-                // {
-                //     highlight: "r",
-                //     language: "r",
-                //     logoClass: "r",
-                // },
-                // {
-                //     highlight: "swift",
-                //     language: "swift",
-                //     logoClass: "swift",
-                // },
-                // {
-                //     highlight: "kotlin",
-                //     language: "kotlin",
-                //     logoClass: "kotlin",
-                // },
-                // {
-                //     highlight: "rust",
-                //     language: "rust",
-                //     logoClass: "rust",
-                // },
             ],
         } satisfies Preset.ThemeConfig,
 
@@ -278,16 +155,6 @@ const config: Config = {
                 id: "openapi",
                 docsPluginId: "classic",
                 config: {
-                    // petstore: {
-                    //     specPath: "examples/petstore.yaml",
-                    //     outputDir: "docs/petstore",
-                    //     downloadUrl:
-                    //         "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
-                    //     sidebarOptions: {
-                    //         groupPathsBy: "tag",
-                    //         categoryLinkSource: "tag",
-                    //     },
-                    // } satisfies OpenApiPlugin.Options,
                     databox: {
                         specPath: "databox_api_schema.json",
                         outputDir: "docs/databox_api",

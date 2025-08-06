@@ -7,7 +7,7 @@ networks:
 
 services:
     documentation:
-        image: ${REGISTRY_NAMESPACE}:${DOCKER_TAG}
+        image: "alchemyfr/phrasea-documentation:latest"
         command: [ "pnpm", "run", "serve" ]
         build:
             context: ./
@@ -17,5 +17,16 @@ services:
         ports:
             - "3078:3000"
 
-#        volumes:
-#            - ./documentation/phrasea:/srv/workspace/documentation/phrasea
+        volumes:
+            - ./docusaurus:/srv/workspace/docusaurus
+    importer:
+        image: "alchemyfr/phrasea-importer:latest"
+        build:
+
+            context: ./
+            dockerfile: ./importer/Dockerfile
+        networks:
+            - internal
+        volumes:
+            - ./importer/:/srv/app
+            - ./docusaurus/:/srv/docusaurus
