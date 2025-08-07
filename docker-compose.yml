@@ -8,25 +8,13 @@ networks:
 services:
     documentation:
         image: "alchemyfr/phrasea-documentation:latest"
-        command: [ "pnpm", "run", "serve" ]
         build:
-            context: ./
-            dockerfile: ./docusaurus/Dockerfile
-        networks:
-            - internal
-        ports:
-            - "3078:3000"
-
-        volumes:
-            - ./docusaurus:/srv/workspace/docusaurus
-    importer:
-        image: "alchemyfr/phrasea-importer:latest"
-        build:
-
             context: ./
             dockerfile: ./importer/Dockerfile
         networks:
             - internal
-        volumes:
-            - ./importer/:/srv/app
-            - ./docusaurus/:/srv/docusaurus
+#        volumes:
+#            - ./importer/:/srv/app
+#            - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+        ports:
+            - "3078:3000"

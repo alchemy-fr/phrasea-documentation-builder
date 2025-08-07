@@ -1,21 +1,28 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM php:8.3.11-fpm-alpine3.20 as importer
-RUN apk add --no-interactive bash nano  \
-      libzip-dev \
-      zip \
-    && docker-php-ext-install zip
-COPY --from=composer:2.5.8 /usr/bin/composer /usr/bin/composer
+FROM php:8.3.11-fpm-alpine3.20
 
+RUN apk add --no-interactive bash nano nodejs npm libzip-dev zip \
+    && npm install -g pnpm@^9.3.0 \
+    && docker-php-ext-install zip
+
+COPY --from=composer:2.5.8 /usr/bin/composer /usr/bin/composer
 RUN composer config --global process-timeout 2000 \
-    && adduser -D -u 1000 app \
-    && printf "\nuser = app\ngroup = app\n" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-   # && composer install --no-dev --optimize-autoloader
+    && adduser -D -u 1000 app
+
+COPY --chown=app:app ./importer /srv/app
+COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 
 USER app
+
 WORKDIR /srv/app
+RUN composer install --no-dev --optimize-autoloader
+RUN php application.php import
 
+WORKDIR /srv/docusaurus/phrasea
+# RUN pnpm install && pnpm run gen-api-docs databox && pnpm build
+RUN pnpm install && pnpm build
 
-#RUN composer install --no-dev --optimize-autoloader
+EXPOSE 3000
 
-CMD ["php-fpm"]
+CMD ["pnpm", "serve"]

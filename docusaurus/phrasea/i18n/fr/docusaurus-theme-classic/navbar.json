@@ -1,0 +1,18 @@
+{
+  "title": {
+    "message": "Documentation Phrasea",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Logo Phrasea",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Tutorial": {
+    "message": "Tutoriel",
+    "description": "Navbar item with label Tutorial"
+  },
+  "item.label.Databox API": {
+    "message": "Databox API",
+    "description": "Navbar item with label Databox API"
+  }
+}

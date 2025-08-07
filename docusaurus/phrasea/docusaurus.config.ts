@@ -5,11 +5,12 @@ import type * as Preset from "@docusaurus/preset-classic";
 import type {Config} from "@docusaurus/types";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
+import * as version from "./version.json"
 
 const config: Config = {
-    title: "My Site",
-    tagline: "Dinosaurs are cool",
-    url: "https://your-docusaurus-test-site.com",
+    title: "Phrasea documentation",
+    tagline: "Version" + version.tag,
+    url: "https://phrasea.documentation.com",
     baseUrl: "/",
    // onBrokenLinks: "throw",
     onBrokenLinks: "ignore",
@@ -20,8 +21,8 @@ const config: Config = {
 
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
-    organizationName: "facebook", // Usually your GitHub org/user name.
-    projectName: "docusaurus", // Usually your repo name.
+    organizationName: "alchemy-fr", // Usually your GitHub org/user name.
+    projectName: "phrasea-documentation-builder", // Usually your repo name.
 
     i18n: {
         defaultLocale: 'en',
@@ -51,8 +52,6 @@ const config: Config = {
             {
                 docs: {
                     sidebarPath: require.resolve("./sidebars.ts"),
-                    // Please change this to your repo.
-                    // Remove this to remove the "edit this page" links.
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
                 },
                 blog: false,
@@ -71,10 +70,10 @@ const config: Config = {
                 },
             },
             navbar: {
-                title: "My Site",
+                title: "Phrasea documentation",
                 logo: {
-                    alt: "My Site Logo",
-                    src: "img/logo.svg",
+                    alt: "Phrasea Logo",
+                    src: "img/phrasea.svg",
                 },
                 items: [
                     {
@@ -98,30 +97,30 @@ const config: Config = {
             footer: {
                 style: "dark",
                 links: [
-                    {
-                        title: "Docs",
-                        items: [
-                            {
-                                label: "Tutorial",
-                                to: "/docs/intro",
-                            },
-                        ],
-                    },
+                    // {
+                    //     title: "Docs",
+                    //     items: [
+                    //         {
+                    //             label: "Tutorial",
+                    //             to: "/docs/intro",
+                    //         },
+                    //     ],
+                    // },
                 ],
-                copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+                copyright: `Copyright © ${new Date().getFullYear()} Alchemy, Inc. Built with Docusaurus.`,
             },
             prism: {
                 additionalLanguages: [
-                    "ruby",
-                    "csharp",
+                    // "ruby",
+                    // "csharp",
                     "php",
-                    "java",
-                    "powershell",
+                    // "java",
+                    // "powershell",
                     "json",
                     "bash",
-                    "dart",
-                    "objectivec",
-                    "r",
+                    // "dart",
+                    // "objectivec",
+                    // "r",
                 ],
             },
             languageTabs: [
@@ -158,8 +157,7 @@ const config: Config = {
                     databox: {
                         specPath: "databox_api_schema.json",
                         outputDir: "docs/databox_api",
-                        downloadUrl:
-                            "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
+                        // downloadUrl: "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
                         sidebarOptions: {
                             groupPathsBy: "tag",
                             categoryLinkSource: "tag",
@@ -168,12 +166,12 @@ const config: Config = {
                 } satisfies Plugin.PluginOptions,
             }
         ],
-        // [
-        //     require.resolve('docusaurus-lunr-search'),
-        //     {
-        //         languages: ['en', 'fr'] // language codes
-        //     }
-        // ]
+        [
+            require.resolve('docusaurus-lunr-search'),
+            {
+                languages: ['en', 'fr']
+            }
+        ]
     ],
 
     themes: ["docusaurus-theme-openapi-docs"],

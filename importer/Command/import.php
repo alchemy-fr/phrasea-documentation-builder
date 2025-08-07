@@ -76,27 +76,32 @@ class import extends Command
         $unzipDir = Path::join($downloadDir, "phrasea-doc-$tag");
         $documentationDir = __DIR__ . '/../../docusaurus/phrasea';
 
-        if(0) {
-            $filesystem = new Filesystem();
+        $filesystem = new Filesystem();
 
-            // Créer le répertoire de téléchargement s'il n'existe pas
-            if (!$filesystem->exists($downloadDir)) {
-                $filesystem->mkdir($downloadDir);
-            }
-
-            $assetContent = $this->httpClient->request('GET', $url)->getContent();
-            $zipFilePath = Path::join($downloadDir, "phrasea-doc-$tag.zip");
-            $filesystem->dumpFile($zipFilePath, $assetContent);
-            $this->output->writeln("Saved to: $zipFilePath");
-
-            $zip = new \ZipArchive();
-            if ($zip->open($zipFilePath) === true) {
-                $zip->extractTo($unzipDir);
-                $zip->close();
-                $this->output->writeln("File successfully extracted to $unzipDir");
-                $filesystem->remove($zipFilePath);
-            }
+        if (!$filesystem->exists($downloadDir)) {
+            $filesystem->mkdir($downloadDir);
         }
+
+        $assetContent = $this->httpClient->request('GET', $url)->getContent();
+        $zipFilePath = Path::join($downloadDir, "phrasea-doc-$tag.zip");
+        $filesystem->dumpFile($zipFilePath, $assetContent);
+        $this->output->writeln("Saved to: $zipFilePath");
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFilePath) === true) {
+            $zip->extractTo($unzipDir);
+            $zip->close();
+            $this->output->writeln("phrasea-doc-$tag.zip extracted to $unzipDir");
+            $filesystem->remove($zipFilePath);
+        }
+
+        $target = $documentationDir . '/version.json';
+        $version = [
+            'tab' => $tag
+        ];
+        $this->output->writeln("Writing version to: " . $target);
+        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
         $this->compileFiles($unzipDir, $documentationDir);
     }
 
@@ -106,11 +111,10 @@ class import extends Command
 
         $documentationDir = rtrim($documentationDir, '/');
         $originDir = rtrim($originDir, '/');
-        $originDirLen = strlen($originDir);
         $generatedDocDir = $originDir . '/_generatedDoc';
         $generatedDocDirLen = strlen($generatedDocDir);
 
-        // ---- first distribute _generatedDoc files to the matching directories
+        // ---- first dispatch _generatedDoc files to the matching directories
         try {
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($generatedDocDir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
             /** @var SplFileInfo $file */
@@ -138,36 +142,33 @@ class import extends Command
             }
 
             // remove the _generatedDoc directory
-            $filesystem->remove($originDir . '/_generatedDoc'); // remove the original _generatedDoc directory
+            $filesystem->remove($originDir . '/_generatedDoc');
         }
         catch (\Exception $e) {
-            // _generatedDoc directory may not exist
+            // _generatedDoc directory can not exist
         }
 
         $this->output->writeln("");
-        $this->output->writeln("");
 
-
-        // ---- then patch the files in the original directory
+        // ---- then dispatch the files in the documentation directory
         $translations = [];
         $scan = function($rootdir, $subdir, $depth=0) use (&$scan, $filesystem, $documentationDir, &$translations) {
-            // if($depth >3) return[];
-
             $tab = str_repeat('  ', $depth);
             $scandir =  $rootdir . $subdir;
             $this->output->writeln(sprintf("%s Scanning %s", $tab, $scandir));
-            $items = [];
             $iterator = new \DirectoryIterator($scandir);
             /** @var SplFileInfo $file */
             foreach ($iterator as $file) {
 
-                $name = $file->getFilename();
-                if ($file->isDir() && ($name === '.' || $name === '..')) {
-                    continue;
+                if ($file->isDot()) {
+                    continue; // skip . and ..
                 }
 
-   //              $this->output->writeln(sprintf("%s - %s", $tab, $file->getPathname()));
                 if ($file->isFile()) {
+                    if($file->getFilename() === '_locales.yml' || $file->getFilename() === '.gitkeep') {
+                        continue;
+                    }
+
                     // remove extension
                     $dotExtension = $file->getExtension() ? ('.' . $file->getExtension()) : '';
                     $bn = $file->getBasename($dotExtension);
@@ -188,52 +189,32 @@ class import extends Command
                     else {
                         $targetDir = $documentationDir . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current/phrasea'. $subdir;
                     }
-                    $this->output->writeln(sprintf("copy %s to %s:%s",$file->getPathname(), $targetDir, $bn . $dotExtension));
-                    $filesystem->mkdir($targetDir, 0777, true); // create the target directory if it does not exist
+                    $this->output->writeln(sprintf("%scopy %s to %s:%s", $tab, $file->getPathname(), $targetDir, $bn . $dotExtension));
+                    $filesystem->mkdir($targetDir, 0777);
                     $filesystem->copy($file->getPathname(), $targetDir . '/' . $bn . $dotExtension, true);
 
-                    if($dotExtension === '.md' || $dotExtension === '.mdx') {
-                        $items[] = [
-                            'type'  => 'doc',
-                            'id'    => 'phrasea' . $subdir . '/' . $bn,
-                            'label' => $bn,
-                        ];
-                    }
                 } elseif ($file->isDir()) {
- //                   $sd = $subdir . '/' . $file->getFilename();
-//                    $this->output->writeln(sprintf("%s got dir '%s' on subdir '%s' --> subdir=%s", $tab, $file->getFilename(), $subdir, $sd));
                     if(file_exists($file->getPathname() . '/_locales.yml')) {
                         foreach (Yaml::parse(file_get_contents($file->getPathname() . '/_locales.yml')) as $locale => $translation) {
                             if(!isset($translations[$locale])) {
                                 $translations[$locale] = [];
                             }
-                            $translations[$locale]['sidebar.tutorialSidebar.category.'.$file->getFilename()] = ['message' => $translation];
+                            $translations[$locale]['sidebar.tutorialSidebar.category.'.$file->getFilename()] = [
+                                'message' => $translation,
+                                'description' => 'Sidebar title for ' . $file->getPathname(),
+                            ];
                         }
-                        //   var_dump($locales);
                     }
 
-                    $item = $scan($rootdir, $subdir . '/' . $file->getFilename(), $depth + 1);
-                    if(count($item['items']) > 0) {
-                        $items[] = $item;
-                    }
+                    $scan($rootdir, $subdir . '/' . $file->getFilename(), $depth + 1);
                 }
             }
             $this->output->writeln(sprintf("%s Scanned %s:", $tab, $subdir));
-
-         //   var_dump($files);
-            return [
-                'type' => 'category',
-                'label' => $subdir ? ucfirst(basename($subdir)) : 'Phrasea',
-                'items' => $items,
-            ];
         };
 
-        $navbar =  $scan($originDir, '') ;
+        $scan($originDir, '') ;
 
-        $this->output->writeln(json_encode($navbar, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-
-        var_dump($translations);
-
+        // dump translations to json files
         foreach ($translations as $locale => $translation) {
             $target = $documentationDir . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
             $this->output->writeln("Writing translations to: " . $target);
@@ -241,40 +222,6 @@ class import extends Command
                 mkdir(dirname($target), 0777, true);
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-        }
-
-        return;
-
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($originDir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
-
-        /** @var SplFileInfo $file */
-        foreach ($iterator as $file) {
-
-            $relativePath = substr($file->getPath(), $originDirLen);
-
-            $this->output->writeln("Processing file: " . $relativePath . ' / ' . $file->getFilename());
-
-            if($file->isDir()) {
-                $target = $documentationDir . '/docs'. $relativePath . '/' . $file->getFilename();
-                $this->output->writeln("mkdir: " . $target);
-                if(file_exists($file->getPathname() . '/_locales.yml')) {
-                    $locales = Yaml::parse(file_get_contents($file->getPathname() . '/_locales.yml'));
-                 //   var_dump($locales);
-                }
-            }
-
-            $d = $documentationDir.substr($file->getPathname(), $originDirLen);
-//            $filesCreatedWhileMirroring[$target] = true;
-
-           // var_dump($file->getPathname(), ' => ', $target);
-
-//            if (is_dir($file)) {
-//                $this->mkdir($target);
-//            } elseif (is_file($file)) {
-//                $this->copy($file, $target, $options['override'] ?? false);
-//            } else {
-//                throw new IOException(\sprintf('Unable to guess "%s" file type.', $file), 0, null, $file);
-//            }
         }
     }
 }
