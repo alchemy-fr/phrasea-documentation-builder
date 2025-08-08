@@ -20,8 +20,8 @@ RUN composer install --no-dev --optimize-autoloader
 RUN php application.php import
 
 WORKDIR /srv/docusaurus/phrasea
-# RUN pnpm install && pnpm run gen-api-docs databox && pnpm build
-RUN pnpm install && pnpm build
+RUN pnpm install && pnpm run gen-api-docs databox && pnpm build
+
 
 EXPOSE 3000
 
