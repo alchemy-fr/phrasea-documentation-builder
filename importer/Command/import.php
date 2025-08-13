@@ -97,7 +97,7 @@ class import extends Command
 
         $target = $documentationDir . '/version.json';
         $version = [
-            'tab' => $tag
+            'tag' => $tag
         ];
         $this->output->writeln("Writing version to: " . $target);
         file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
