@@ -3,7 +3,7 @@ name: build-builder
 on: [push]
 
 env:
-  REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}/alchemyfr
+  REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:

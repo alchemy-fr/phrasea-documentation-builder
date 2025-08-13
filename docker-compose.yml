@@ -7,7 +7,7 @@ networks:
 
 services:
     documentation:
-        image: "alchemyfr/phrasea-documentation:latest"
+        image: "alchemy-fr/phrasea-documentation:latest"
         build:
             context: ./
             dockerfile: ./importer/Dockerfile
