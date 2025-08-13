@@ -1,6 +1,6 @@
 name: build-builder
 
-on:[push]
+on: [push]
 
 env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}/alchemyfr
@@ -9,7 +9,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == 'alchemy-fr' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
