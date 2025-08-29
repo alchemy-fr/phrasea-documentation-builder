@@ -39,7 +39,7 @@ jobs:
             ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
 
       - name: build and export to doc repository
-        runs: |
+        run: |
           docker compose run --rm \
           -e DOC_GITHUB_TOKEN="${{ secrets.DOC_GITHUB_TOKEN || '' }}" \
           -e PHRASEA_TAG="${{ env.PHRASEA_TAG }}" \
