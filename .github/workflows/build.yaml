@@ -1,6 +1,8 @@
 name: build-builder
 
-on: [push]
+on:
+  repository_dispatch:
+      types: [trigger-workflow]
 
 env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
