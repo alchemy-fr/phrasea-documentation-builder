@@ -53,6 +53,7 @@ class import extends Command
         $this->output = $output;
 
         $githubToken = getenv('DOC_GITHUB_TOKEN'); // Ensure the token is set in your environment
+
         if (!$githubToken) {
             $this->output->writeln('Warning: GitHub token not found in environment variables DOC_GITHUB_TOKEN');
             $this->output->writeln('The builder will not be able to push the changes to the documentation repository.');
@@ -134,6 +135,9 @@ class import extends Command
 
                 $semverTag = new Semver\Version($tag);
                 $version = $semverTag->major . '.' . $semverTag->minor;
+                if ($semverTag->patch) {
+                    $version .= '.' . $semverTag->patch;
+                }
                 $versionDir = sprintf('%s/%s', self::DOCS_DIR, $version);
                 $filesystem->mkdir($versionDir);
 

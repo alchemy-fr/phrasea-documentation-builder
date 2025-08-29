@@ -7,6 +7,7 @@ on:
 env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  PHRASEA_TAG: ${{ github.event.PHRASEA_TAG || 'latest' }}
 
 jobs:
   build:
@@ -27,7 +28,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
+      - name: Build and Push image
         uses: docker/build-push-action@v6
         with:
           context: ./
@@ -35,4 +36,11 @@ jobs:
           provenance: false
           push: true
           tags: |
+            ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
+
+      - name: build and export to doc repository
+        runs: |
+          docker run --rm \
+            -e DOC_GITHUB_TOKEN="${{ secrets.DOC_GITHUB_TOKEN || '' }}" \
+            -e PHRASEA_TAG="${{ env.PHRASEA_TAG }}" \
             ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
