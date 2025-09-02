@@ -1,23 +1,27 @@
 networks:
-    internal:
-        driver: bridge
-        ipam:
-            config:
-                - subnet: 174.40.0.0/16
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 174.40.0.0/16
 
 services:
-    documentation:
-        image: "alchemy-fr/phrasea-documentation:latest"
-        build:
-            context: ./
-            dockerfile: ./importer/Dockerfile
-        networks:
-            - internal
-#        volumes:
-#            - ./importer/:/srv/app
-#            - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
-        ports:
-            - "3078:3000"
-        environment:
-            - DOC_GITHUB_TOKEN=${DOC_GITHUB_TOKEN}
-            - PHRASEA_TAG=${PHRASEA_TAG}
+  documentation:
+    image: "alchemy-fr/phrasea-documentation:latest"
+    build:
+      context: ./
+      dockerfile: ./importer/Dockerfile
+    networks:
+      - internal
+    #        volumes:
+    #            - ./importer/:/srv/app
+    #            - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+    ports:
+      - "3078:3000"
+    environment:
+      - PHRASEA_REPO=${PHRASEA_REPO}
+      - DOC_REPO=${DOC_REPO}
+      - DOC_BRANCH=${DOC_BRANCH}
+      - DOC_GITHUB_TOKEN=${DOC_GITHUB_TOKEN}
+      - PHRASEA_TAG=${PHRASEA_TAG}
+      - PHRASEA_BRANCH=${PHRASEA_BRANCH}

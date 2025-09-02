@@ -6,13 +6,10 @@ use PHLAK\SemVer;
 use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -22,19 +19,28 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 #[AsCommand(name: 'import')]
 class import extends Command
 {
+    private const string GITHUB_URL = 'https://github.com';
     private const string GITHUB_API_URL = 'https://api.github.com';
+    private const string PHRASEA_REPO = 'alchemy-fr/sandbox-ci-documentation';
+    private const string DOC_REPO = 'alchemy-fr/phrasea-documentation';
+    private const string DOC_BRANCH = 'main';
+
     private const string DOCUSAURUS_PROJECT_DIR = __DIR__ . '/../../docusaurus/phrasea';
+    private const string DOWNLOAD_DIR = __DIR__ . '/../downloads';
     private const string WORKSPACE_DIR = __DIR__ . '/../workspace';
     private const string CLONE_DIRNAME = 'phrasea-documentation';
     private const string CLONE_DIR = self::WORKSPACE_DIR . '/' . self::CLONE_DIRNAME;
     private const string DOCS_DIRNAME = 'docs';
     private const string DOCS_DIR = self::CLONE_DIR . '/' . self::DOCS_DIRNAME;
-    private const string DOC_REPO = 'electrautopsy/pdoc.git';
-    private const string DOC_BRANCH = 'main';
 
     private InputInterface $input;
     private OutputInterface $output;
     private HttpClientInterface $httpClient;
+    private string $githubToken;
+    private string $phrasea_repo;
+    private string $doc_repo;
+    private string $doc_branch;
+    private Filesystem $filesystem;
 
     protected function configure(): void
     {
@@ -42,9 +48,14 @@ class import extends Command
 
         $this
             ->setDescription('Import documentation data from a phrasea release')
-            ->addArgument('tag', InputArgument::OPTIONAL)
+            ->addOption('tag', 't', InputOption::VALUE_REQUIRED, 'release (tag) to import')
+            ->addOption('branch', 'b', InputOption::VALUE_REQUIRED, 'branch to import')
             ->addOption('list', 'l', InputOption::VALUE_NONE, 'list available tags and quit (no export)')
-        ;
+            ->setHelp("--tag and --branch are mutually exclusive options.\n"
+                       . "If none is provided env-vars will be used:\n"
+                       . "  - PHRASEA_TAG for --tag\n"
+                       . "  - PHRASEA_BRANCH for --branch\n"
+                       . "If none is provided the latest release will be used.");
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -52,16 +63,16 @@ class import extends Command
         $this->input = $input;
         $this->output = $output;
 
-        $githubToken = getenv('DOC_GITHUB_TOKEN'); // Ensure the token is set in your environment
+        $this->phrasea_repo = getenv('PHRASEA_REPO') ?: self::PHRASEA_REPO;
+        $this->doc_repo     = getenv('DOC_REPO') ?: self::DOC_REPO;
+        $this->doc_branch   = getenv('DOC_BRANCH') ?: self::DOC_BRANCH;
+        $this->githubToken  = getenv('DOC_GITHUB_TOKEN');
+        $this->filesystem = new Filesystem();
 
-        if (!$githubToken) {
-            $this->output->writeln('Warning: GitHub token not found in environment variables DOC_GITHUB_TOKEN');
+        if (!$this->githubToken) {
+            $this->output->writeln('Warning: GitHub token not found in env-var DOC_GITHUB_TOKEN');
             $this->output->writeln('The builder will not be able to push the changes to the documentation repository.');
         }
-
-        $filesystem = new Filesystem();
-
-        $repository = 'alchemy-fr/sandbox-ci-documentation';
 
         $this->httpClient = HttpClient::create([
             'headers' => [
@@ -72,9 +83,10 @@ class import extends Command
         try {
 
             $releasesByTag = [];
+            $branchesByName = [];
 
-            // Récupérer les releases
-            $response = $this->httpClient->request('GET', self::GITHUB_API_URL . "/repos/$repository/releases");
+            // get releases
+            $response = $this->httpClient->request('GET', self::GITHUB_API_URL . "/repos/".$this->phrasea_repo."/releases");
             $releases = $response->toArray();
             foreach ($releases as $release) {
                 foreach ($release['assets'] as $asset) {
@@ -84,62 +96,175 @@ class import extends Command
                 }
             }
 
+            // get branches
+            $response = $this->httpClient->request('GET', self::GITHUB_API_URL . "/repos/".$this->phrasea_repo."/branches");
+            $branches = $response->toArray();
+            foreach ($branches as $branch) {
+                $branchesByName[$branch['name']] = $branch['commit']['url'];
+            }
+
             uksort($releasesByTag, function ($a, $b) {
                 $a = new Semver\Version($a);
                 $b = new Semver\Version($b);
                 return $a->eq($b) ? 0 : ($a->gt($b) ? -1 : 1);
             });
             if($input->getOption('list')) {
-                $output->writeln("Available releases in $repository:");
+                $output->writeln("Available releases in ".$this->phrasea_repo.":");
                 foreach($releasesByTag as $tag => $url) {
                     $output->writeln(" - $tag");
+                }
+                $output->writeln("Available branches in ".$this->phrasea_repo.":");
+                foreach($branchesByName as $name => $url) {
+                    $output->writeln(" - $name");
                 }
                 return Command::SUCCESS;
             }
 
+            $this->filesystem->remove(self::DOWNLOAD_DIR);
+            $this->filesystem->mkdir(self::DOWNLOAD_DIR);
+
+            if($input->getOption('tag') && $input->getOption('branch')) {
+                $this->output->writeln("--tag and --branch are mutually exclusive");
+                return Command::FAILURE;
+            }
+            if($input->getOption('tag')) {
+                return $this->exportByTag($releasesByTag, $input->getOption('tag'));
+            }
+            if($input->getOption('branch')) {
+                return $this->exportByBranch($branchesByName, $input->getOption('branch'));
+            }
+
+            if(getenv('PHRASEA_TAG') && getenv('PHRASEA_BRANCH')) {
+                $this->output->writeln("env(PHRASEA_TAG) and env(PHRASEA_BRANCH) are mutually exclusive");
+                return Command::FAILURE;
+            }
+            if(getenv('PHRASEA_TAG')) {
+                return $this->exportByTag($releasesByTag, getenv('PHRASEA_TAG'));
+            }
+            if(getenv('PHRASEA_BRANCH')) {
+                return $this->exportByBranch($branchesByName, getenv('PHRASEA_BRANCH'));
+            }
+
+            // fallback : use latest release
             if(empty($releasesByTag)) {
-                throw new IOException("No release found in $repository");
-            }
-            $tag = array_key_first($releasesByTag);
-
-            if(null !== $input->getArgument('tag')) {
-                $tag = $input->getArgument('tag');
-                $this->output->writeln("Using tag from argument: " . $tag);
-            }
-            else if(null !== getenv('PHRASEA_TAG')) {
-                $tag = getenv('PHRASEA_TAG');
-                $this->output->writeln("Using tag from env-var PHRASEA_TAG: " . $tag);
-            }
-            if(!isset($releasesByTag[$tag])) {
-                throw new IOException("Tag $tag not found in releases");
+                $this->output->writeln("No release found in ".$this->phrasea_repo."");
+                return Command::FAILURE;
             }
 
-            // download the zip, unzip and prepare the 'docs' directory for docusaurus
-            $this->generateForRelease($tag, $releasesByTag[$tag]);
+            return $this->exportByTag($releasesByTag, array_key_first($releasesByTag));
 
+        } catch (\Exception $e) {
+            $output->writeln('Error: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+    }
+
+    private function exportByTag(array $releasesByTag, string $tag): int
+    {
+        if (!isset($releasesByTag[$tag])) {
+            $this->output->writeln("Tag $tag not found in releases");
+
+            return Command::FAILURE;
+        }
+
+        // download the zip, unzip and prepare the 'docs' directory for docusaurus
+        $url = $releasesByTag[$tag];
+        $this->output->writeln("Downloading release: $tag from $url");
+
+        $zipFilePath = self::DOWNLOAD_DIR . "/phrasea-$tag.zip";
+        $this->filesystem->dumpFile($zipFilePath, $this->httpClient->request('GET', $url)->getContent());
+        $this->output->writeln("Saved to: $zipFilePath");
+
+        $unzipDir = self::DOWNLOAD_DIR . "/phrasea-doc-$tag";
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFilePath) === true) {
+            $zip->extractTo($unzipDir);
+            $zip->close();
+            $this->output->writeln("phrasea-$tag.zip extracted to $unzipDir");
+            $this->filesystem->remove($zipFilePath);
+        }
+
+        $this->compileFiles($unzipDir, $tag);
+
+        $semverTag = new Semver\Version($tag);
+        $version = $semverTag->major . '.' . $semverTag->minor;
+
+        return $this->generateAndPush($version);
+    }
+
+    private function exportByBranch(array $branchesByName, string $branchName): int
+    {
+        if (!isset($branchesByName[$branchName])) {
+            $this->output->writeln("Branch $branchName not found in branches");
+
+            return Command::FAILURE;
+        }
+
+        $this->output->writeln("Cloning phrasea branch: $branchName");
+
+        $cloneDir = self::DOWNLOAD_DIR . '/phrasea-' . $branchName;
+        $this->runCommand(
+            [
+                'git',
+                'clone',
+                '-n',
+                '--depth=1',
+                '--filter=tree:0',
+                '-b',
+                $branchName,
+                '--single-branch',
+                self::GITHUB_URL . '/' . $this->phrasea_repo,
+                $cloneDir
+            ],
+            self::DOWNLOAD_DIR
+        );
+
+        $this->runCommand(
+            [
+                'git',
+                'sparse-checkout',
+                'set',
+                '--no-cone',
+                '/doc',
+            ],
+            $cloneDir
+        );
+
+        $this->runCommand(
+            [
+                'git',
+                'checkout',
+            ],
+            $cloneDir
+        );
+
+        $this->compileFiles($cloneDir . '/doc', $branchName);
+
+        return $this->generateAndPush($branchName);
+    }
+
+    private function generateAndPush(string $version): int
+    {
+        try {
             // create the api documentation from the json schema
             $this->runCommand(
                 ['pnpm', 'run', 'gen-api-docs', 'databox'],
                 self::DOCUSAURUS_PROJECT_DIR
             );
 
-            if($githubToken) {
+            if($this->githubToken) {
                 // docusaurus will build directly in the workspace/repo directory, we first clone the doc repo
-                $filesystem->remove(self::WORKSPACE_DIR);
-                $filesystem->mkdir(self::WORKSPACE_DIR);
+                $this->filesystem->remove(self::WORKSPACE_DIR);
+                $this->filesystem->mkdir(self::WORKSPACE_DIR);
 
                 $this->runCommand(
-                    ['git', 'clone', "https://{{DOC_GITHUB_TOKEN}}@github.com/" . self::DOC_REPO, self::CLONE_DIRNAME],
+                    ['git', 'clone', "https://{{DOC_GITHUB_TOKEN}}@github.com/" . $this->doc_repo, self::CLONE_DIRNAME],
                     self::WORKSPACE_DIR
                 );
 
-                $semverTag = new Semver\Version($tag);
-                $version = $semverTag->major . '.' . $semverTag->minor;
-                if ($semverTag->patch) {
-                    $version .= '.' . $semverTag->patch;
-                }
                 $versionDir = sprintf('%s/%s', self::DOCS_DIR, $version);
-                $filesystem->mkdir($versionDir);
+                $this->filesystem->mkdir($versionDir);
 
                 $this->runCommand(
                     ['pnpm', 'build', '--out-dir', $versionDir],
@@ -150,9 +275,9 @@ class import extends Command
                 $this->runCommand(['git', 'add', $versionDir], self::CLONE_DIR);
                 $commitMessage = sprintf('update %s on %s', $version, date('c'));
                 $this->runCommand(['git', 'commit', '-m', $commitMessage], self::CLONE_DIR);
-                $this->runCommand(['git', 'push', '-u', 'origin', self::DOC_BRANCH], self::CLONE_DIR);
+                $this->runCommand(['git', 'push', '-u', 'origin', $this->doc_branch], self::CLONE_DIR);
 
-                $filesystem->remove(self::WORKSPACE_DIR);
+                $this->filesystem->remove(self::WORKSPACE_DIR);
                 $this->output->writeln(sprintf('Files committed and pushed successfully to %s.', $version));
             }
             else {
@@ -173,7 +298,7 @@ class import extends Command
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
-            $output->writeln('Error: ' . $e->getMessage());
+            $this->output->writeln('Error: ' . $e->getMessage());
             return Command::FAILURE;
         }
     }
@@ -208,53 +333,13 @@ class import extends Command
         $this->output->writeln($process->getOutput());
     }
 
-    private function generateForRelease(string $tag, string $url): void
+    private function compileFiles(string $unzipDir, string $version): void
     {
-        $this->output->writeln("Downloading release: $tag from $url");
-
-        $downloadDir = __DIR__ . '/../downloads';
-        $unzipDir = Path::join($downloadDir, "phrasea-doc-$tag");
-        $documentationDir = __DIR__ . '/../../docusaurus/phrasea';
-
-        $filesystem = new Filesystem();
-
-        if (!$filesystem->exists($downloadDir)) {
-            $filesystem->mkdir($downloadDir);
-        }
-
-        $assetContent = $this->httpClient->request('GET', $url)->getContent();
-        $zipFilePath = Path::join($downloadDir, "phrasea-doc-$tag.zip");
-        $filesystem->dumpFile($zipFilePath, $assetContent);
-        $this->output->writeln("Saved to: $zipFilePath");
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipFilePath) === true) {
-            $zip->extractTo($unzipDir);
-            $zip->close();
-            $this->output->writeln("phrasea-doc-$tag.zip extracted to $unzipDir");
-            $filesystem->remove($zipFilePath);
-        }
-
-        $target = $documentationDir . '/version.json';
-        $version = [
-            'tag' => $tag
-        ];
-        $this->output->writeln("Writing version to: " . $target);
-        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-
-        $this->compileFiles($unzipDir, $documentationDir);
-    }
-
-    private function compileFiles(string $unzipDir, string $documentationDir): void
-    {
-        $filesystem = new Filesystem();
-
-        $documentationDir = rtrim($documentationDir, '/');
         $unzipDir = rtrim($unzipDir, '/');
         $generatedDocDir = $unzipDir . '/_generatedDoc';
         $generatedDocDirLen = strlen($generatedDocDir);
 
-        // ---- first dispatch _generatedDoc files to the same sub-directories in the zip directory
+        // ---- first dispatch _generatedDoc files to the same subdirectories in the zip directory
         //      = move files one subdir up
         $createdDirs = [];
         $copiedFiles = [];
@@ -267,16 +352,16 @@ class import extends Command
                 $this->output->writeln($relativePathname . ' => ' . $file->getFilename());
                 if ($file->isDir()) {
                     $d = $unzipDir . $relativePathname;
-                    if (!$filesystem->exists($d)) {
-                        $filesystem->mkdir($d);
+                    if (!$this->filesystem->exists($d)) {
+                        $this->filesystem->mkdir($d);
                         $this->output->writeln("Created directory: $d");
                         $createdDirs[] = $d;
                     }
                 }
                 elseif ($file->isFile()) {
                     $d = $unzipDir . $relativePathname;
-                    if (!$filesystem->exists($d) || !file_exists($d)) {
-                        $filesystem->copy($file->getPathname(), $d, true);
+                    if (!$this->filesystem->exists($d) || !file_exists($d)) {
+                        $this->filesystem->copy($file->getPathname(), $d, true);
                         $this->output->writeln("Copied file: " . $file->getPathname() . " to " . $d);
                         $copiedFiles[] = $d;
                     }
@@ -294,7 +379,7 @@ class import extends Command
 
         // ---- then dispatch the files in the documentation directory
         $translations = [];
-        $scan = function($subdir, $depth=0) use (&$scan, $filesystem, $unzipDir, $documentationDir, &$translations) {
+        $scan = function($subdir, $depth=0) use (&$scan, $unzipDir, &$translations) {
             $tab = str_repeat('  ', $depth);
             $scandir =  $unzipDir . $subdir;
             $this->output->writeln(sprintf("%sScanning %s", $tab, $scandir));
@@ -326,14 +411,14 @@ class import extends Command
                     }
 
                     if($locale === '_') {
-                        $targetDir = $documentationDir . '/docs/phrasea'. $subdir;
+                        $targetDir = self::DOCUSAURUS_PROJECT_DIR . '/docs/phrasea'. $subdir;
                     }
                     else {
-                        $targetDir = $documentationDir . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current/phrasea'. $subdir;
+                        $targetDir = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current/phrasea'. $subdir;
                     }
                     $this->output->writeln(sprintf("%s  copy %s to %s:%s", $tab, $file->getPathname(), $targetDir, $bn . $dotExtension));
-                    $filesystem->mkdir($targetDir, 0777);
-                    $filesystem->copy($file->getPathname(), $targetDir . '/' . $bn . $dotExtension, true);
+                    $this->filesystem->mkdir($targetDir, 0777);
+                    $this->filesystem->copy($file->getPathname(), $targetDir . '/' . $bn . $dotExtension, true);
 
                 } elseif ($file->isDir()) {
                     if(file_exists($file->getPathname() . '/_locales.yml')) {
@@ -355,16 +440,24 @@ class import extends Command
 
         $scan('');
 
-        $filesystem->remove($unzipDir);
+        $this->filesystem->remove($unzipDir);
 
         // dump translations to json files
         foreach ($translations as $locale => $translation) {
-            $target = $documentationDir . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
+            $target = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
             $this->output->writeln("Writing translations to: " . $target);
             if(!file_exists(dirname($target))) {
                 mkdir(dirname($target), 0777, true);
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
+
+        // dump version
+        $target = self::DOCUSAURUS_PROJECT_DIR . '/version.json';
+        $version = [
+            'tag' => $version
+        ];
+        $this->output->writeln("Writing version to: " . $target);
+        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }
