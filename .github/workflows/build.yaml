@@ -38,6 +38,9 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
+          build-args: |
+            PHRASEA_TAG="${{ env.PHRASEA_TAG }}"
+            PHRASEA_BRANCH="${{ env.PHRASEA_BRANCH }}"
 
       - name: build and export to doc repository
         run: |
