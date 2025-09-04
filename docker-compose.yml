@@ -6,11 +6,13 @@ networks:
         - subnet: 174.40.0.0/16
 
 services:
-  documentation:
-    image: "alchemy-fr/phrasea-documentation:latest"
+  builder:
+    # image: "alchemy-fr/phrasea-documentation:latest"
     build:
       context: ./
       dockerfile: ./importer/Dockerfile
+      args:
+        - PHRASEA_TAG=${PHRASEA_TAG}
     networks:
       - internal
     #        volumes:

@@ -8,7 +8,6 @@ env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || 'latest' }}
-  PHRASEA_BRANCH: ${{ github.event.client_payload.PHRASEA_BRANCH || '' }}
 
 jobs:
   build:
@@ -40,12 +39,10 @@ jobs:
             ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
           build-args: |
             PHRASEA_TAG="${{ env.PHRASEA_TAG }}"
-            PHRASEA_BRANCH="${{ env.PHRASEA_BRANCH }}"
 
       - name: build and export to doc repository
         run: |
           docker compose run --rm \
           -e DOC_GITHUB_TOKEN="${{ secrets.DOC_GITHUB_TOKEN || '' }}" \
           -e PHRASEA_TAG="${{ env.PHRASEA_TAG }}" \
-          -e PHRASEA_BRANCH="${{ env.PHRASEA_BRANCH }}" \
-          documentation
+          builder

@@ -16,8 +16,8 @@ use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-#[AsCommand(name: 'import')]
-class import extends Command
+#[AsCommand(name: 'build')]
+class build extends Command
 {
     private const string GITHUB_URL = 'https://github.com';
     private const string GITHUB_API_URL = 'https://api.github.com';
@@ -47,15 +47,7 @@ class import extends Command
         parent::configure();
 
         $this
-            ->setDescription('Import documentation data from a phrasea release')
-            ->addOption('tag', 't', InputOption::VALUE_REQUIRED, 'release (tag) to import')
-            ->addOption('branch', 'b', InputOption::VALUE_REQUIRED, 'branch to import')
-            ->addOption('list', 'l', InputOption::VALUE_NONE, 'list available tags and quit (no export)')
-            ->setHelp("--tag and --branch are mutually exclusive options.\n"
-                       . "If none is provided env-vars will be used:\n"
-                       . "  - PHRASEA_TAG for --tag\n"
-                       . "  - PHRASEA_BRANCH for --branch\n"
-                       . "If none is provided the latest release will be used.");
+            ->setDescription('Build documentation with data fetched from phrasea image');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -81,167 +73,32 @@ class import extends Command
         ]);
 
         try {
-
-            $releasesByTag = [];
-            $branchesByName = [];
-
-            // get releases
-            $response = $this->httpClient->request('GET', self::GITHUB_API_URL . "/repos/".$this->phrasea_repo."/releases");
-            $releases = $response->toArray();
-            foreach ($releases as $release) {
-                foreach ($release['assets'] as $asset) {
-                    if($asset['name'] === 'phrasea-doc.zip') {
-                        $releasesByTag[$release['tag_name']] = $asset['browser_download_url'];
-                    }
-                }
+            if (getenv('PHRASEA_TAG')) {
+                return $this->exportByTag(getenv('PHRASEA_TAG'));
             }
-
-            // get branches
-            $response = $this->httpClient->request('GET', self::GITHUB_API_URL . "/repos/".$this->phrasea_repo."/branches");
-            $branches = $response->toArray();
-            foreach ($branches as $branch) {
-                $branchesByName[$branch['name']] = $branch['commit']['url'];
-            }
-
-            uksort($releasesByTag, function ($a, $b) {
-                $a = new Semver\Version($a);
-                $b = new Semver\Version($b);
-                return $a->eq($b) ? 0 : ($a->gt($b) ? -1 : 1);
-            });
-            if($input->getOption('list')) {
-                $output->writeln("Available releases in ".$this->phrasea_repo.":");
-                foreach($releasesByTag as $tag => $url) {
-                    $output->writeln(" - $tag");
-                }
-                $output->writeln("Available branches in ".$this->phrasea_repo.":");
-                foreach($branchesByName as $name => $url) {
-                    $output->writeln(" - $name");
-                }
-                return Command::SUCCESS;
-            }
-
-            $this->filesystem->remove(self::DOWNLOAD_DIR);
-            $this->filesystem->mkdir(self::DOWNLOAD_DIR);
-
-            if($input->getOption('tag') && $input->getOption('branch')) {
-                $this->output->writeln("--tag and --branch are mutually exclusive");
-                return Command::FAILURE;
-            }
-            if($input->getOption('tag')) {
-                return $this->exportByTag($releasesByTag, $input->getOption('tag'));
-            }
-            if($input->getOption('branch')) {
-                return $this->exportByBranch($branchesByName, $input->getOption('branch'));
-            }
-
-            if(getenv('PHRASEA_TAG') && getenv('PHRASEA_BRANCH')) {
-                $this->output->writeln("env(PHRASEA_TAG) and env(PHRASEA_BRANCH) are mutually exclusive");
-                return Command::FAILURE;
-            }
-            if(getenv('PHRASEA_TAG')) {
-                return $this->exportByTag($releasesByTag, getenv('PHRASEA_TAG'));
-            }
-            if(getenv('PHRASEA_BRANCH')) {
-                return $this->exportByBranch($branchesByName, getenv('PHRASEA_BRANCH'));
-            }
-
-            // fallback : use latest release
-            if(empty($releasesByTag)) {
-                $this->output->writeln("No release found in ".$this->phrasea_repo."");
-                return Command::FAILURE;
-            }
-
-            return $this->exportByTag($releasesByTag, array_key_first($releasesByTag));
-
         } catch (\Exception $e) {
             $output->writeln('Error: ' . $e->getMessage());
             return Command::FAILURE;
         }
+
+        return Command::SUCCESS;
     }
 
-    private function exportByTag(array $releasesByTag, string $tag): int
+    private function exportByTag(string $tag): int
     {
-        if (!isset($releasesByTag[$tag])) {
-            $this->output->writeln("Tag $tag not found in releases");
-
-            return Command::FAILURE;
-        }
-
-        // download the zip, unzip and prepare the 'docs' directory for docusaurus
-        $url = $releasesByTag[$tag];
-        $this->output->writeln("Downloading release: $tag from $url");
-
-        $zipFilePath = self::DOWNLOAD_DIR . "/phrasea-$tag.zip";
-        $this->filesystem->dumpFile($zipFilePath, $this->httpClient->request('GET', $url)->getContent());
-        $this->output->writeln("Saved to: $zipFilePath");
-
-        $unzipDir = self::DOWNLOAD_DIR . "/phrasea-doc-$tag";
-
-        $zip = new \ZipArchive();
-        if ($zip->open($zipFilePath) === true) {
-            $zip->extractTo($unzipDir);
-            $zip->close();
-            $this->output->writeln("phrasea-$tag.zip extracted to $unzipDir");
-            $this->filesystem->remove($zipFilePath);
-        }
+        $unzipDir = self::DOWNLOAD_DIR . "/doc";
 
         $this->compileFiles($unzipDir, $tag);
 
-        $semverTag = new Semver\Version($tag);
-        $version = $semverTag->major . '.' . $semverTag->minor;
-
-        return $this->generateAndPush($version);
-    }
-
-    private function exportByBranch(array $branchesByName, string $branchName): int
-    {
-        if (!isset($branchesByName[$branchName])) {
-            $this->output->writeln("Branch $branchName not found in branches");
-
-            return Command::FAILURE;
+        try {
+            $semverTag = new Semver\Version($tag);
+            $version = $semverTag->major . '.' . $semverTag->minor;
+        }
+        catch (SemVer\Exceptions\InvalidVersionException $e) {
+            $version = $tag;
         }
 
-        $this->output->writeln("Cloning phrasea branch: $branchName");
-
-        $cloneDir = self::DOWNLOAD_DIR . '/phrasea-' . $branchName;
-        $this->runCommand(
-            [
-                'git',
-                'clone',
-                '-n',
-                '--depth=1',
-                '--filter=tree:0',
-                '-b',
-                $branchName,
-                '--single-branch',
-                self::GITHUB_URL . '/' . $this->phrasea_repo,
-                $cloneDir
-            ],
-            self::DOWNLOAD_DIR
-        );
-
-        $this->runCommand(
-            [
-                'git',
-                'sparse-checkout',
-                'set',
-                '--no-cone',
-                '/doc',
-            ],
-            $cloneDir
-        );
-
-        $this->runCommand(
-            [
-                'git',
-                'checkout',
-            ],
-            $cloneDir
-        );
-
-        $this->compileFiles($cloneDir . '/doc', $branchName);
-
-        return $this->generateAndPush($branchName);
+        return $this->generateAndPush($version);
     }
 
     private function generateAndPush(string $version): int

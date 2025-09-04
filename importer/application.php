@@ -3,13 +3,13 @@
 
 require __DIR__.'/vendor/autoload.php';
 
-use App\Command\import;
+use App\Command\build;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
 
 // ... register commands
 
-$application->add(new import());
+$application->add(new build());
 
 $application->run();

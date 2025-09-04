@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
 ARG PHRASEA_TAG=latest
-FROM docker.io/alchemyfr/fake-phrasea:$PHRASEA_TAG as phrasea
+FROM ghcr.io/alchemy-fr/fake-phrasea:${PHRASEA_TAG} AS phrasea
 
 FROM php:8.3.11-fpm-alpine3.20
 
@@ -21,18 +21,18 @@ COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 
 
 # ! COPY --from does not support variable substitution (see https://github.com/moby/moby/issues/34482)
-COPY --from=phrasea /srv/app/doc /srv/app/downloads/doc
+COPY --from=phrasea --chown=app:app /srv/app/doc /srv/app/downloads/doc
 
-RUN ls -al /srv/app/downloads/doc
+RUN ls -al /srv/app/downloads/doc/_generatedDoc
 
-#USER app
-#
-#WORKDIR /srv/docusaurus/phrasea
-#RUN pnpm install
-#
-#WORKDIR /srv/app
-#RUN composer install --no-dev --optimize-autoloader
-#
-#EXPOSE 3000
-#
-#CMD ["php", "application.php", "import"]
+USER app
+
+WORKDIR /srv/docusaurus/phrasea
+RUN pnpm install
+
+WORKDIR /srv/app
+RUN composer install --no-dev --optimize-autoloader
+
+EXPOSE 3000
+
+CMD ["php", "application.php", "build"]
