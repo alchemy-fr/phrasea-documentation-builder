@@ -4,7 +4,7 @@ on: [push]
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
+  ECR_REPOSITORY_NAME: alchemyfr/ps-databox-api-php
 
 jobs:
   pull-ecr-images:
