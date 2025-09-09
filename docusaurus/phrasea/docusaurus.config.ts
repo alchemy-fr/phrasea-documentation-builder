@@ -6,6 +6,7 @@ import type {Config} from "@docusaurus/types";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 import * as version from "./version.json"
+import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
@@ -53,6 +54,12 @@ const config: Config = {
                 docs: {
                     sidebarPath: require.resolve("./sidebars.ts"),
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
+                    disableVersioning: false,
+                    // versions: {
+                    //     current: {
+                    //         label: `${getNextVersionName()} 🚧`,
+                    //     },
+                    // },
                 },
                 blog: false,
                 theme: {
@@ -88,8 +95,13 @@ const config: Config = {
                         to: "/docs/category/databox-api",
                     },
                     {
+                        type: "docsVersionDropdown",
+                        position: "right",
+                        dropdownActiveClassDisabled: true,
+                    },
+                    {
                         type: 'localeDropdown',
-                        position: 'left',
+                        position: 'right',
                     },
 
                 ],

@@ -8,6 +8,7 @@ env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || 'latest' }}
+  PHRASEA_COMMIT_MSG: ${{ github.event.client_payload.PHRASEA_COMMIT_MSG || '' }}
 
 jobs:
   build:
@@ -15,8 +16,9 @@ jobs:
     steps:
       - name: Dump vars
         run: |
-          echo "===== on_push.yaml ====="
+          echo "===== build.yaml ====="
           echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
+          echo "env.PHRASEA_COMMIT_MSG = ${{ env.PHRASEA_COMMIT_MSG }}"
           echo "github.ref = ${{ github.ref }}"
           echo "github.sha = ${{ github.sha }}"
           echo "github.ref_name = ${{ github.ref_name }}"
@@ -25,7 +27,6 @@ jobs:
           echo "github.event.client_payload.PHRASEA_TAG = ${{ github.event.client_payload.PHRASEA_TAG }}"
           echo "env.REGISTRY = ${{ env.REGISTRY }}"
           echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
-
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,4 +60,5 @@ jobs:
           docker compose run --rm \
           -e DOC_GITHUB_TOKEN="${{ secrets.DOC_GITHUB_TOKEN || '' }}" \
           -e PHRASEA_TAG="${{ env.PHRASEA_TAG }}" \
+          -e PHRASEA_COMMIT_MSG="${{ env.PHRASEA_COMMIT_MSG }}" \
           builder
