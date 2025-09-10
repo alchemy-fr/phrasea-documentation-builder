@@ -35,7 +35,7 @@ jobs:
           echo "Pulling image: 3.12.5"
           docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5
           IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5)
-          docker cp $IMAGE_ID:/doc ./downloads/3.12.5
+          docker cp $IMAGE_ID:/doc ./3.12.5
           docker rm -v $IMAGE_ID
 #          echo "Fetching image tags from ECR repository: $ECR_REPOSITORY_NAME"
 #          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
