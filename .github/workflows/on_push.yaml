@@ -30,13 +30,45 @@ jobs:
         with:
           registry-type: public
 
-      - name: List and Pull Images
+      - name: List and Pull single image
+        if: ${{env.PHRASEA_TAG != ''}}
         run: |
-          echo "Pulling image: 3.12.5"
-          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5
-          IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5)
-          docker cp $IMAGE_ID:/doc ./3.12.5
+          echo "Pulling image: ${{env.PHRASEA_TAG}}"
+          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}}
+          IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}})
+          docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
           docker rm -v $IMAGE_ID
+
+      - name: List and Pull all images from releases
+        if: ${{env.PHRASEA_TAG == ''}}
+        run: |
+          echo "Fetching tags from github:phrasea releases"
+          # Fetch releases
+          response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
+
+          # Check if the response is valid
+          if [ $? -eq 0 ]; then
+            # Loop through releases
+            echo "$response" | jq -c '.[]' | while read -r release; do
+              tag_name=$(echo "$release" | jq -r '.tag_name')
+              name=$(echo "$release" | jq -r '.name')
+              created_at=$(echo "$release" | jq -r '.created_at')
+              echo "Release: $name"
+              echo "Tag: $tag_name"
+              echo "Created At: $created_at"
+              echo "-------------------------"
+            done
+          fi
+
+#              IMAGE_TAGS=$(aws ecr-public list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
+#              for TAG in $IMAGE_TAGS; do
+#              echo "Pulling image: $ECR_REPOSITORY_NAME:$TAG"
+#              docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG
+#              IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG)
+#              docker cp $IMAGE_ID:/doc/ ./$TAG
+#              docker rm -v $IMAGE_ID
+#              done
+
 #          echo "Fetching image tags from ECR repository: $ECR_REPOSITORY_NAME"
 #          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
 #          for TAG in $IMAGE_TAGS; do
