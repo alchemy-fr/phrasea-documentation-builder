@@ -4,7 +4,7 @@ on: [push]
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_NAME: alchemyfr/ps-databox-api-php
+  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
 
 jobs:
   pull-ecr-images:
@@ -32,9 +32,14 @@ jobs:
 
       - name: List and Pull Images
         run: |
-          echo "Fetching image tags from ECR repository: $ECR_REPOSITORY_NAME"
-          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
-          for TAG in $IMAGE_TAGS; do
-            echo "Pulling image: $ECR_REPOSITORY_NAME:$TAG"
-            docker pull ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY_NAME:$TAG
-          done
+          echo "Pulling image: 3.12.5"
+          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5
+          id = docker create public.ecr.aws/alchemyfr/ps-databox-api-php:3.12.5
+          docker cp $id:/doc ./downloads
+          docker rm -v $id
+#          echo "Fetching image tags from ECR repository: $ECR_REPOSITORY_NAME"
+#          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
+#          for TAG in $IMAGE_TAGS; do
+#            echo "Pulling image: $ECR_REPOSITORY_NAME:$TAG"
+#            docker pull ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY_NAME:$TAG
+#          done
