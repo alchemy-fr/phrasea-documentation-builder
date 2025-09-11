@@ -63,8 +63,8 @@ jobs:
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
           echo "Pulling image: ${{env.PHRASEA_TAG}}"
-          docker pull ${{PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
-          IMAGE_ID=$(docker create ${{PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
+          docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
+          IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
           docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
           docker rm -v $IMAGE_ID
 
