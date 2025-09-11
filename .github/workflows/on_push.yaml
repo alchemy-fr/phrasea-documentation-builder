@@ -6,11 +6,35 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
 
+  # sent by workflow_dispatch from phrasea:on-push
+  PHRASEA_TAG: "0.5.0"
+  PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
+
+  # where to download from phrasea (releases on docker image(s) for applications doc(s) ; github repo for base doc)
+  # PHRASEA_GITHUB: "alchemy-fr/phrasea"
+  # PHRASEA_IMAGES: "public.ecr.aws/alchemyfr/ps-databox-api-php"
+  PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
+  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-phrasea"
+
 jobs:
   pull-ecr-images:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Dump vars
+        run: |
+          echo "===== on_push.yaml ====="
+          echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
+          echo "env.PHRASEA_REF = ${{ env.PHRASEA_REF }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.sha = ${{ github.sha }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.repository = ${{ github.repository }}"
+          echo "github.event.release.tag_name = ${{ github.event.release.tag_name }}"
+          echo "github.event.client_payload.PHRASEA_TAG = ${{ github.event.client_payload.PHRASEA_TAG }}"
+          echo "env.REGISTRY = ${{ env.REGISTRY }}"
+          echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
+
       - name: Configure AWS  Credentials
         env:
           AWS_ECR_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -39,20 +63,19 @@ jobs:
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
           echo "Pulling image: ${{env.PHRASEA_TAG}}"
-          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}}
-          IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}})
+          docker pull ${{PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
+          IMAGE_ID=$(docker create ${{PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
           docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
           docker rm -v $IMAGE_ID
-
-
 
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_TAG == ''}}
         run: |
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
-          # response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
-          response=$(cat ./releases.json)
+          response=$(curl -s "https://api.github.com/repos/${{env.PHRASEA_GITHUB}}/releases")
+          echo $response
+          # response=$(cat ./releases.json)
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             # Loop through releases

@@ -8,7 +8,7 @@ env:
   REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || 'latest' }}
-  PHRASEA_COMMIT_MSG: ${{ github.event.client_payload.PHRASEA_COMMIT_MSG || '' }}
+  PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
 
 jobs:
   build:
@@ -16,9 +16,9 @@ jobs:
     steps:
       - name: Dump vars
         run: |
-          echo "===== build.yaml ====="
+          echo "===== on_trigger-workflow.yaml ====="
           echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
-          echo "env.PHRASEA_COMMIT_MSG = ${{ env.PHRASEA_COMMIT_MSG }}"
+          echo "env.PHRASEA_REF = ${{ env.PHRASEA_REF }}"
           echo "github.ref = ${{ github.ref }}"
           echo "github.sha = ${{ github.sha }}"
           echo "github.ref_name = ${{ github.ref_name }}"

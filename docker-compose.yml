@@ -15,15 +15,15 @@ services:
         - PHRASEA_TAG=${PHRASEA_TAG}
     networks:
       - internal
-    #        volumes:
-    #            - ./importer/:/srv/app
-    #            - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+#    volumes:
+#        - ./importer/:/srv/app
+#        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
     ports:
       - "3078:3000"
     environment:
-      - PHRASEA_REPO=${PHRASEA_REPO}
+      - PHRASEA_GITHUB=${PHRASEA_GITHUB}
+      - PHRASEA_IMAGES=${PHRASEA_IMAGES}
+      - PHRASEA_TAG=${PHRASEA_TAG}
       - DOC_REPO=${DOC_REPO}
       - DOC_BRANCH=${DOC_BRANCH}
       - DOC_GITHUB_TOKEN=${DOC_GITHUB_TOKEN}
-      - PHRASEA_TAG=${PHRASEA_TAG}
-      - PHRASEA_BRANCH=${PHRASEA_BRANCH}
