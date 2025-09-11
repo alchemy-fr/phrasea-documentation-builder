@@ -7,7 +7,7 @@ env:
   ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
 
   # sent by workflow_dispatch from phrasea:on-push
-  PHRASEA_TAG: "0.5.0"
+  PHRASEA_TAG: "master"
   PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
 
   # where to download from phrasea (releases on docker image(s) for applications doc(s) ; github repo for base doc)
@@ -15,7 +15,6 @@ env:
   # PHRASEA_IMAGES: "public.ecr.aws/alchemyfr/ps-databox-api-php"
   PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
   PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-phrasea"
-
 
 jobs:
   pull-ecr-images:
