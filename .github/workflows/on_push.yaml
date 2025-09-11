@@ -24,11 +24,16 @@ jobs:
 #        run: |
 #          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
-      - name: Login to Amazon ECR Public
-        id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v2
+#      - name: Login to Amazon ECR Public
+#        id: login-ecr-public
+#        uses: aws-actions/amazon-ecr-login@v2
+#        with:
+#          registry-type: public
+
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          registry-type: public
+          fetch-depth: 30
 
       - name: List and Pull single image
         if: ${{env.PHRASEA_TAG != ''}}
