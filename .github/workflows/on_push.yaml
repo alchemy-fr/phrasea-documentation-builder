@@ -52,10 +52,9 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
           # response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
-          pwd
-          ls -al
           response=$(cat ./releases.json)
           echo "$response"
+          echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)'
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             # Loop through releases
