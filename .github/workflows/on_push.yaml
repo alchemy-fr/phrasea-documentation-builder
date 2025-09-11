@@ -39,6 +39,8 @@ jobs:
           docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
           docker rm -v $IMAGE_ID
 
+
+
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_TAG == ''}}
         run: |
@@ -48,15 +50,15 @@ jobs:
           echo "$response"
           # Check if the response is valid
           if [ $? -eq 0 ]; then
-            # Loop through releases 
+            # Loop through releases
             echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)' | while read -r release; do
-#              tag_name=$(echo "$release" | jq -r '.tag_name')
-#              name=$(echo "$release" | jq -r '.name')
-#              created_at=$(echo "$release" | jq -r '.created_at')
-#              echo "Release: $name"
-#              echo "Tag: $tag_name"
-#              echo "Created At: $created_at"
-#              echo "-------------------------"
+              tag_name=$(echo "$release" | jq -r '.tag_name')
+              name=$(echo "$release" | jq -r '.name')
+              created_at=$(echo "$release" | jq -r '.created_at')
+              echo "Release: $name"
+              echo "Tag: $tag_name"
+              echo "Created At: $created_at"
+              echo "-------------------------"
             done
           fi
 
