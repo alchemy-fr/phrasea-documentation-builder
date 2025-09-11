@@ -47,6 +47,8 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
           # response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
+          pwd
+          ls -al
           response=$(cat ./releases.json)
           echo "$response"
           # Check if the response is valid
