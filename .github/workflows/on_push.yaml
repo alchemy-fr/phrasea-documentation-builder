@@ -49,7 +49,8 @@ jobs:
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             # Loop through releases
-            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)' | while read -r release; do
+               # echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)' | while read -r release; do
+               echo "$response" | jq -c '[.[]]' | while read -r release; do
 #              tag_name=$(echo "$release" | jq -r '.tag_name')
 #              name=$(echo "$release" | jq -r '.name')
 #              created_at=$(echo "$release" | jq -r '.created_at')
