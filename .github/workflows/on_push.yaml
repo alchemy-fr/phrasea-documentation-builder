@@ -65,7 +65,7 @@ jobs:
           echo "Pulling image: ${{env.PHRASEA_TAG}}"
           docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
           IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:doc/ ./${{env.PHRASEA_TAG}} || echo "No doc/ folder found in image"
+          docker cp $IMAGE_ID:/sr/app/doc/ ./${{env.PHRASEA_TAG}} || echo "No doc/ folder found in image"
           docker rm -v $IMAGE_ID
 
       - name: List and Pull all images from releases
