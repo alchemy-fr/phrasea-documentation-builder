@@ -65,7 +65,7 @@ jobs:
           echo "Pulling image: ${{env.PHRASEA_TAG}}"
           docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
           IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
+          docker cp $IMAGE_ID:doc/ ./${{env.PHRASEA_TAG}} || echo "No doc/ folder found in image"
           docker rm -v $IMAGE_ID
 
       - name: List and Pull all images from releases
@@ -73,9 +73,10 @@ jobs:
         run: |
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
-          response=$(curl -s "https://api.github.com/repos/${{env.PHRASEA_GITHUB}}/releases")
-          echo $response
-          # response=$(cat ./releases.json)
+          # -------- to not explode api limits, use a static file for tests -----------
+          # response=$(curl -s "https://api.github.com/repos/${{env.PHRASEA_GITHUB}}/releases")
+          response=$(cat ./releases_sandbox.json)
+          # ---------------------------------------------------------------------------
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             # Loop through releases
