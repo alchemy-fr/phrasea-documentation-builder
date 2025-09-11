@@ -45,19 +45,22 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
           response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
-
+          echo "$response"
           # Check if the response is valid
           if [ $? -eq 0 ]; then
-            # Loop through releases
-            echo ${{response}} | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)' | while read -r release; do
-              tag_name=$(echo "$release" | jq -r '.tag_name')
-              name=$(echo "$release" | jq -r '.name')
-              created_at=$(echo "$release" | jq -r '.created_at')
-              echo "Release: $name"
-              echo "Tag: $tag_name"
-              echo "Created At: $created_at"
-              echo "-------------------------"
-            done
+            echo "$response" | jq -c '[.[]]'
+            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)'
+
+#            # Loop through releases
+#            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0]|tonumber, minor: .[1]|tonumber, patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all)' | while read -r release; do
+#              tag_name=$(echo "$release" | jq -r '.tag_name')
+#              name=$(echo "$release" | jq -r '.name')
+#              created_at=$(echo "$release" | jq -r '.created_at')
+#              echo "Release: $name"
+#              echo "Tag: $tag_name"
+#              echo "Created At: $created_at"
+#              echo "-------------------------"
+#            done
           fi
 
 #              IMAGE_TAGS=$(aws ecr-public list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
