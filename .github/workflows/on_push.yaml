@@ -16,6 +16,7 @@ env:
   PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
   PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-phrasea"
 
+
 jobs:
   pull-ecr-images:
     runs-on: ubuntu-latest
