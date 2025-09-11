@@ -30,14 +30,14 @@ jobs:
         with:
           registry-type: public
 
-      - name: List and Pull single image
-        if: ${{env.PHRASEA_TAG != ''}}
-        run: |
-          echo "Pulling image: ${{env.PHRASEA_TAG}}"
-          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}}
-          IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
-          docker rm -v $IMAGE_ID
+#      - name: List and Pull single image
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        run: |
+#          echo "Pulling image: ${{env.PHRASEA_TAG}}"
+#          docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}}
+#          IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:${{env.PHRASEA_TAG}})
+#          docker cp $IMAGE_ID:/doc/ ./${{env.PHRASEA_TAG}}
+#          docker rm -v $IMAGE_ID
 
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_TAG == ''}}
