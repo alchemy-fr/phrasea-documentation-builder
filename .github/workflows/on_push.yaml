@@ -4,7 +4,7 @@ on: [push]
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
+  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-fake-databox-api-php
 
   # sent by workflow_dispatch from phrasea:on-push
   PHRASEA_TAG: "master"
@@ -14,7 +14,7 @@ env:
   # PHRASEA_GITHUB: "alchemy-fr/phrasea"
   # PHRASEA_IMAGES: "public.ecr.aws/alchemyfr/ps-databox-api-php"
   PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
-  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-databox-api-php"
+  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/ps-fake-databox-api-php"
 
 jobs:
   pull-ecr-images:
