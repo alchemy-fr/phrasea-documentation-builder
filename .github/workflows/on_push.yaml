@@ -14,7 +14,7 @@ env:
   # PHRASEA_GITHUB: "alchemy-fr/phrasea"
   # PHRASEA_IMAGES: "public.ecr.aws/alchemyfr/ps-databox-api-php"
   PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
-  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-phrasea"
+  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/fake-databox-api-php"
 
 jobs:
   pull-ecr-images:
