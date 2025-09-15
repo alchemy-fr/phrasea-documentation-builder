@@ -129,7 +129,7 @@ jobs:
     
               # Clone le repository en mode sparse-checkout
               echo "Clonage du repository en mode sparse-checkout..."
-              git clone --depth 1 --filter=blob:none --sparse ${{env.PHRASEA_GITHUB}} ./downloads/$tag_name
+              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name
               
               # Se déplace dans le dossier cloné
               cd ./downloads/$tag_name || exit
