@@ -87,7 +87,6 @@ jobs:
 
       - name: Copy Subdirectory
         run: |
-          mkdir ./downloads/${{env.PHRASEA_TAG}}
           cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
           
 
