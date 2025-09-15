@@ -143,6 +143,7 @@ jobs:
               
               echo "Téléchargement terminé. Le sous-répertoire est disponible dans : ./downloads/$tag_name/doc"
 
+              cd ../../../
               echo "-------------------------"
             done
           
