@@ -59,14 +59,35 @@ jobs:
         with:
           fetch-depth: 30
 
+      ### if we have a specific tag, prepare a single version of documentation
+
+      # copy the databox-api-php doc from the docker image
       - name: List and Pull single image
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
+          mkdir -p ./${{env.PHRASEA_TAG}}/databox-api-php
           echo "Pulling image: ${{env.PHRASEA_TAG}}"
           docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
           IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:/srv/app/doc/ ./${{env.PHRASEA_TAG}} || echo "No doc/ folder found in image"
+          docker cp $IMAGE_ID:/srv/app/doc/ ./${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
           docker rm -v $IMAGE_ID
+
+      # copy the base doc from the github repository
+      - name: Checkout Target Repository
+        if: ${{env.PHRASEA_TAG != ''}}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{env.PHRASEA_GITHUB}}
+          ref: ${{env.PHRASEA_TAG}}
+          path: sandbox-ci-documentation
+
+      - name: Copy Subdirectory
+        run: |
+          mkdir ./${{env.PHRASEA_TAG}}
+          cp -r ./sandbox-ci-documentation/doc ./${{env.PHRASEA_TAG}}/
+          
+
+      ### if we do not have a specific tag, prepare all x.y.z versions of documentation
 
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_TAG == ''}}
