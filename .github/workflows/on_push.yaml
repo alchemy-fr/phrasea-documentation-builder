@@ -129,10 +129,10 @@ jobs:
     
               # Clone le repository en mode sparse-checkout
               echo "Clonage du repository en mode sparse-checkout..."
-              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name
+              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name/doc
               
               # Se déplace dans le dossier cloné
-              cd ./downloads/$tag_name || exit
+              cd ./downloads/$tag_name/doc || exit
   
               # Configure le sparse-checkout pour inclure uniquement le sous-répertoire
               echo "Configuration du sparse-checkout pour le sous-répertoire : /doc"
@@ -145,6 +145,8 @@ jobs:
 
               echo "-------------------------"
             done
+          
+            tree ./downloads
           fi
 
 
