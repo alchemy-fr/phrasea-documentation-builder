@@ -2,11 +2,10 @@
 ARG PHRASEA_TAG=latest
 # FROM ghcr.io/alchemy-fr/fake-phrasea:${PHRASEA_TAG} AS phrasea
 
-FROM php:8.3.11-fpm-alpine3.20 AS importer
+FROM php:8.3.11-cli-alpine3.20 AS importer
 
-RUN apk add --no-interactive git bash nano nodejs npm libzip-dev zip openssh \
-    && npm install -g pnpm@^9.3.0 \
-    && docker-php-ext-install zip
+RUN apk add --no-interactive git bash nano nodejs npm \
+    && npm install -g pnpm@^9.3.0
 
 
 COPY --from=composer:2.5.8 /usr/bin/composer /usr/bin/composer
@@ -19,6 +18,7 @@ USER app
 #
 COPY --chown=app:app ./importer /srv/app
 COPY --chown=app:app ./downloads /srv/app/downloads
+RUN tree /srv/app/downloads
 WORKDIR /srv/app
 #        COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 #
@@ -39,9 +39,5 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN ["php", "application.php", "build"]
 
-FROM php:8.3.11-fpm-alpine3.20
-COPY --from=importer /srv/app/build/ /var/www/html/
-
-#EXPOSE 3000
-#
-#CMD ["php", "application.php", "build"]
+# FROM php:8.3.11-fpm-alpine3.20
+# COPY --from=importer /srv/app/build/ /var/www/html/
