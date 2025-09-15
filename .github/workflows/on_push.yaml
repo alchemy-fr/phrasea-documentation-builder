@@ -86,6 +86,7 @@ jobs:
           path: sandbox-ci-documentation
 
       - name: Copy Subdirectory
+        if: ${{env.PHRASEA_TAG != ''}}
         run: |
           cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
           
