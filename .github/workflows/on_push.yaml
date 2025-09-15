@@ -6,6 +6,10 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-fake-databox-api-php
 
+  REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+
   # sent by workflow_dispatch from phrasea:on-push
   PHRASEA_TAG: "master"
 #  PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
@@ -112,18 +116,26 @@ jobs:
             done
           fi
 
-#              IMAGE_TAGS=$(aws ecr-public list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
-#              for TAG in $IMAGE_TAGS; do
-#              echo "Pulling image: $ECR_REPOSITORY_NAME:$TAG"
-#              docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG
-#              IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG)
-#              docker cp $IMAGE_ID:/doc/ ./$TAG
-#              docker rm -v $IMAGE_ID
-#              done
 
-#          echo "Fetching image tags from ECR repository: $ECR_REPOSITORY_NAME"
-#          IMAGE_TAGS=$(aws ecr list-images --repository-name $ECR_REPOSITORY_NAME --query 'imageIds[*].imageTag' --output text --region $AWS_REGION)
-#          for TAG in $IMAGE_TAGS; do
-#            echo "Pulling image: $ECR_REPOSITORY_NAME:$TAG"
-#            docker pull ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY_NAME:$TAG
-#          done
+
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./importer/Dockerfile
+          provenance: false
+          push: true
+          tags: |
+            ${{ env.REGISTRY_NAMESPACE }}/ps-documentation-builder:latest
+          build-args: |
+            PHRASEA_TAG=${{ env.PHRASEA_TAG }}
