@@ -135,8 +135,8 @@ jobs:
               cd ./downloads/$tag_name/doc || exit
   
               # Configure le sparse-checkout pour inclure uniquement le sous-répertoire
-              echo "Configuration du sparse-checkout pour le sous-répertoire : /doc"
-              git sparse-checkout set /doc
+              echo "Configuration du sparse-checkout pour le sous-répertoire : doc"
+              git sparse-checkout set doc
                 
               # Change la branche si nécessaire
               git checkout $tag_name
