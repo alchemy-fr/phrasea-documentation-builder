@@ -38,5 +38,5 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN ["php", "application.php", "build"]
 
-# FROM php:8.3.11-fpm-alpine3.20
-# COPY --from=importer /srv/app/build/ /var/www/html/
+FROM php:8.3.11-fpm-alpine3.20
+COPY --from=importer /srv/app/build/ /var/www/html/

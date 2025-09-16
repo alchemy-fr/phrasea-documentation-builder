@@ -64,15 +64,19 @@ class build extends Command
             $output->writeln($env . '=' . getenv($env));
         }
 
-//$this->filesystem->mkdir(__DIR__ . '/../build');
+$this->filesystem->mkdir(__DIR__ . '/../build');
 //$this->filesystem->mirror(__DIR__ . '/../downloads/', __DIR__ . '/../build/');
+        $html = "<html><body><h1>Download dir contains:</h1>\n<ul>\n";
         $di = new \DirectoryIterator(self::DOWNLOAD_DIR);
         foreach ($di as $file) {
-            if ($file->isDot()) {
+            if ($file->isDot() || !$file->isDir()) {
                 continue;
             }
             $output->writeln('Download dir contains: ' . $file->getFilename());
+            $html .= '<li>' . $file->getFilename() . "</li>\n";
         }
+        $html .= "</ul></body></html>\n";
+        file_put_contents(__DIR__ . '/../build/index.html', $html);
 return Command::SUCCESS;
 
 
