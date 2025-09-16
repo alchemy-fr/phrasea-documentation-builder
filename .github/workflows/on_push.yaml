@@ -124,7 +124,7 @@ jobs:
 
               export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
               export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
-              ./download_tags.sh "$tag_name"
+              ./download_tag.sh "$tag_name"
           
               echo "-------------------------"
             done
