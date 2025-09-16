@@ -145,7 +145,6 @@ jobs:
           fi
 
 
-
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
 
@@ -167,3 +166,4 @@ jobs:
             ${{ env.REGISTRY_NAMESPACE }}/ps-documentation-builder:latest
           build-args: |
             PHRASEA_TAG=${{ env.PHRASEA_TAG }}
+            PHRASEA_REF=${{ env.PHRASEA_REF }}

@@ -10,11 +10,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsCommand(name: 'build')]
 class build extends Command
@@ -35,7 +33,7 @@ class build extends Command
 
     private InputInterface $input;
     private OutputInterface $output;
-    private HttpClientInterface $httpClient;
+
 //    private string $githubToken;
     private string $phrasea_repo;
     private string $doc_repo;
@@ -58,22 +56,23 @@ class build extends Command
         $this->phrasea_repo = getenv('PHRASEA_REPO') ?: self::PHRASEA_REPO;
         $this->doc_repo     = getenv('DOC_REPO') ?: self::DOC_REPO;
         $this->doc_branch   = getenv('DOC_BRANCH') ?: self::DOC_BRANCH;
-//        $this->githubToken  = getenv('DOC_GITHUB_TOKEN');
+
         $this->filesystem = new Filesystem();
 
-//        if (!$this->githubToken) {
-//            $this->output->writeln('Warning: GitHub token not found in env-var DOC_GITHUB_TOKEN');
-//            $this->output->writeln('The builder will not be able to push the changes to the documentation repository.');
-//        }
+        $output->writeln('------------------- running php -------');
+        foreach(['PHRASEA_TAG', 'PHRASEA_REF'] as $env) {
+            $output->writeln($env . '=' . getenv($env));
+        }
 
-        $this->httpClient = HttpClient::create([
-            'headers' => [
-                'Accept' => 'application/vnd.github.v3+json',
-            ],
-        ]);
-$output->writeln('------------------- running php with tag: ' . getenv('PHRASEA_TAG'));
-$this->filesystem->mkdir(__DIR__ . '/../build');
-$this->filesystem->mirror(__DIR__ . '/../downloads/', __DIR__ . '/../build/');
+//$this->filesystem->mkdir(__DIR__ . '/../build');
+//$this->filesystem->mirror(__DIR__ . '/../downloads/', __DIR__ . '/../build/');
+        $di = new \DirectoryIterator(self::DOWNLOAD_DIR);
+        foreach ($di as $file) {
+            if ($file->isDot()) {
+                continue;
+            }
+            $output->writeln('Download dir contains: ' . $file->getFilename());
+        }
 return Command::SUCCESS;
 
 
@@ -115,47 +114,11 @@ return Command::SUCCESS;
                 self::DOCUSAURUS_PROJECT_DIR
             );
 
-//            if($this->githubToken) {
-//                // docusaurus will build directly in the workspace/repo directory, we first clone the doc repo
-//                $this->filesystem->remove(self::WORKSPACE_DIR);
-//                $this->filesystem->mkdir(self::WORKSPACE_DIR);
-//
-//                $this->runCommand(
-//                    ['git', 'clone', "https://{{DOC_GITHUB_TOKEN}}@github.com/" . $this->doc_repo, self::CLONE_DIRNAME],
-//                    self::WORKSPACE_DIR
-//                );
-//
-//                $versionDir = sprintf('%s/%s', self::DOCS_DIR, $version);
-//                $this->filesystem->mkdir($versionDir);
-//
-//                $this->runCommand(
-//                    ['pnpm', 'build', '--out-dir', $versionDir],
-//                    self::DOCUSAURUS_PROJECT_DIR,
-//                    3600
-//                );
-//
-//                $this->runCommand(['git', 'add', $versionDir], self::CLONE_DIR);
-//                $commitMessage = sprintf('update %s on %s', $version, date('c'));
-//                $this->runCommand(['git', 'commit', '-m', $commitMessage], self::CLONE_DIR);
-//                $this->runCommand(['git', 'push', '-u', 'origin', $this->doc_branch], self::CLONE_DIR);
-//
-//                $this->filesystem->remove(self::WORKSPACE_DIR);
-//                $this->output->writeln(sprintf('Files committed and pushed successfully to %s.', $version));
-//            }
-//            else {
-                $this->output->writeln('No GitHub token provided, skipping commit and push.');
-                $this->runCommand(
-                    ['pnpm', 'build'],
-                    self::DOCUSAURUS_PROJECT_DIR,
-                    3600
-                );
-
-                $this->runCommand(
-                    ['pnpm', 'run', 'serve'],
-                    self::DOCUSAURUS_PROJECT_DIR,
-                    0
-                );
-//            }
+            $this->runCommand(
+                ['pnpm', 'build'],
+                self::DOCUSAURUS_PROJECT_DIR,
+                3600
+            );
 
             return Command::SUCCESS;
 

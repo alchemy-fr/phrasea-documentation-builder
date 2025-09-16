@@ -20,7 +20,7 @@ COPY --chown=app:app ./importer /srv/app
 COPY --chown=app:app ./downloads /srv/app/downloads
 RUN tree /srv/app/downloads
 WORKDIR /srv/app
-#        COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
+COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 #
 #        # ! COPY --from does not support variable substitution (see https://github.com/moby/moby/issues/34482)
 #        # COPY --from=phrasea --chown=app:app /srv/app/doc /srv/app/downloads/doc
@@ -29,11 +29,10 @@ WORKDIR /srv/app
 #
 #        # RUN ls -al /srv/app/downloads/doc/_generatedDoc
 #
-#        USER app
-#
-#        WORKDIR /srv/docusaurus/phrasea
-#        RUN pnpm install
-#
+USER app
+WORKDIR /srv/docusaurus/phrasea
+RUN pnpm install
+
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
