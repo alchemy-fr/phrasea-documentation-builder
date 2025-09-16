@@ -79,26 +79,30 @@ jobs:
       - name: List and Pull single image
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
-          mkdir -p ./downloads/${{env.PHRASEA_TAG}}/databox-api-php
-          echo "Pulling image: ${{env.PHRASEA_TAG}}"
-          docker pull ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
-          IMAGE_ID=$(docker create ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
-          docker rm -v $IMAGE_ID
+          export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
+          export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
+          ./importer/download_tag.sh "${{env.PHRASEA_TAG}}"
 
-        # copy the base doc from the GitHub repository
-      - name: Checkout Target Repository
-        if: ${{env.PHRASEA_TAG != ''}}
-        uses: actions/checkout@v4
-        with:
-          repository: ${{vars.PHRASEA_GITHUB}}
-          ref: ${{env.PHRASEA_TAG}}
-          path: sandbox-ci-documentation
+#          mkdir -p ./downloads/${{env.PHRASEA_TAG}}/databox-api-php
+#          echo "Pulling image: ${{env.PHRASEA_TAG}}"
+#          docker pull ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
+#          IMAGE_ID=$(docker create ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
+#          docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
+#          docker rm -v $IMAGE_ID
 
-      - name: Copy Subdirectory
-        if: ${{env.PHRASEA_TAG != ''}}
-        run: |
-          cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
+#        # copy the base doc from the GitHub repository
+#      - name: Checkout Target Repository
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        uses: actions/checkout@v4
+#        with:
+#          repository: ${{vars.PHRASEA_GITHUB}}
+#          ref: ${{env.PHRASEA_TAG}}
+#          path: sandbox-ci-documentation
+#
+#      - name: Copy Subdirectory
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        run: |
+#          cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
 
 
       ### if we do not have a specific tag, prepare all x.y.z versions of documentation
@@ -114,6 +118,8 @@ jobs:
           # ---------------------------------------------------------------------------
           # Check if the response is valid
           if [ $? -eq 0 ]; then
+            export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
+            export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
             # Loop through releases
             echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
               tag_name=$(echo "$release" | jq -r '.tag_name')
@@ -123,9 +129,6 @@ jobs:
               echo "Tag: $tag_name"
               echo "Created At: $created_at"
 
-
-              export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
-              export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
               ./importer/download_tag.sh "$tag_name"
           
               echo "-------------------------"
