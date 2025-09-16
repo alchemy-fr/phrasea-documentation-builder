@@ -29,6 +29,8 @@ jobs:
       - name: Dump vars
         run: |
           echo "===== on_push.yaml ====="
+          echo "env.PHRASEA_GITHUB = ${{ env.PHRASEA_GITHUB }}"
+          echo "env.PHRASEA_IMAGES = ${{ env.PHRASEA_IMAGES }}"
           echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
           echo "env.PHRASEA_REF = ${{ env.PHRASEA_REF }}"
           echo "github.ref = ${{ github.ref }}"
@@ -41,131 +43,131 @@ jobs:
           echo "env.REGISTRY = ${{ env.REGISTRY }}"
           echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
 
-      - name: Configure AWS  Credentials
-        env:
-          AWS_ECR_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-#      - name: Authenticate Docker to ECR
-#        run: |
-#          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-
-#      - name: Login to Amazon ECR Public
-#        id: login-ecr-public
-#        uses: aws-actions/amazon-ecr-login@v2
+#      - name: Configure AWS  Credentials
+#        env:
+#          AWS_ECR_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        uses: aws-actions/configure-aws-credentials@v4
 #        with:
-#          registry-type: public
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 30
-
-      ### if we have a specific tag, prepare a single version of documentation
-
-        # copy the databox-api-php doc from the docker image
-      - name: List and Pull single image
-        if: ${{env.PHRASEA_TAG != ''}}
-        run: |
-          mkdir -p ./downloads/${{env.PHRASEA_TAG}}/databox-api-php
-          echo "Pulling image: ${{env.PHRASEA_TAG}}"
-          docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
-          IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-          docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
-          docker rm -v $IMAGE_ID
-
-        # copy the base doc from the GitHub repository
-      - name: Checkout Target Repository
-        if: ${{env.PHRASEA_TAG != ''}}
-        uses: actions/checkout@v4
-        with:
-          repository: ${{env.PHRASEA_GITHUB}}
-          ref: ${{env.PHRASEA_TAG}}
-          path: sandbox-ci-documentation
-
-      - name: Copy Subdirectory
-        if: ${{env.PHRASEA_TAG != ''}}
-        run: |
-          cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
-          
-
-      ### if we do not have a specific tag, prepare all x.y.z versions of documentation
-
-      - name: List and Pull all images from releases
-        if: ${{env.PHRASEA_TAG == ''}}
-        run: |
-          echo "Fetching tags from github:phrasea releases"
-          # Fetch releases
-          # -------- to not explode api limits, use a static file for tests -----------
-          # response=$(curl -s "https://api.github.com/repos/${{env.PHRASEA_GITHUB}}/releases")
-          response=$(cat ./releases_sandbox.json)
-          # ---------------------------------------------------------------------------
-          # Check if the response is valid
-          if [ $? -eq 0 ]; then
-            # Loop through releases
-            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
-              tag_name=$(echo "$release" | jq -r '.tag_name')
-              name=$(echo "$release" | jq -r '.name')
-              created_at=$(echo "$release" | jq -r '.created_at')
-              echo "Release: $name"
-              echo "Tag: $tag_name"
-              echo "Created At: $created_at"
-
-              mkdir -p ./downloads/$tag_name
-          
-              # copy the base doc from the GitHub repository
-              # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ? 
-              #     so we clone in a tmp folder and then move the doc/ folder
-          
-              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/tmpclone/         
-              cd ./downloads/tmpclone
-              git sparse-checkout set doc          
-              git checkout $tag_name
-              cd ../../
-              mv ./downloads/tmpclone/doc ./downloads/$tag_name/
-              rm -rf ./downloads/tmpclone
-          
-          
-              # copy the databox-api-php doc from the docker image
-               
-              mkdir -p ./downloads/$tag_name/databox-api-php
-              echo "Pulling image: $tag_name"
-              docker pull ${{env.PHRASEA_IMAGES}}:$tag_name
-              IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:$tag_name)
-              docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/$tag_name/databox-api-php/ || echo "No doc/ folder found in image"
-              docker rm -v $IMAGE_ID
-          
-          
-              echo "-------------------------"
-            done
-          
-            tree ./downloads
-          fi
-
-
-      - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v2
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./
-          file: ./importer/Dockerfile
-          provenance: false
-          push: true
-          tags: |
-            ${{ env.REGISTRY_NAMESPACE }}/ps-documentation-builder:latest
-          build-args: |
-            PHRASEA_TAG=${{ env.PHRASEA_TAG }}
-            PHRASEA_REF=${{ env.PHRASEA_REF }}
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: us-east-1
+#
+##      - name: Authenticate Docker to ECR
+##        run: |
+##          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+#
+##      - name: Login to Amazon ECR Public
+##        id: login-ecr-public
+##        uses: aws-actions/amazon-ecr-login@v2
+##        with:
+##          registry-type: public
+#
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 30
+#
+#      ### if we have a specific tag, prepare a single version of documentation
+#
+#        # copy the databox-api-php doc from the docker image
+#      - name: List and Pull single image
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        run: |
+#          mkdir -p ./downloads/${{env.PHRASEA_TAG}}/databox-api-php
+#          echo "Pulling image: ${{env.PHRASEA_TAG}}"
+#          docker pull ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
+#          IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
+#          docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
+#          docker rm -v $IMAGE_ID
+#
+#        # copy the base doc from the GitHub repository
+#      - name: Checkout Target Repository
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        uses: actions/checkout@v4
+#        with:
+#          repository: ${{env.PHRASEA_GITHUB}}
+#          ref: ${{env.PHRASEA_TAG}}
+#          path: sandbox-ci-documentation
+#
+#      - name: Copy Subdirectory
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        run: |
+#          cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
+#
+#
+#      ### if we do not have a specific tag, prepare all x.y.z versions of documentation
+#
+#      - name: List and Pull all images from releases
+#        if: ${{env.PHRASEA_TAG == ''}}
+#        run: |
+#          echo "Fetching tags from github:phrasea releases"
+#          # Fetch releases
+#          # -------- to not explode api limits, use a static file for tests -----------
+#          # response=$(curl -s "https://api.github.com/repos/${{env.PHRASEA_GITHUB}}/releases")
+#          response=$(cat ./releases_sandbox.json)
+#          # ---------------------------------------------------------------------------
+#          # Check if the response is valid
+#          if [ $? -eq 0 ]; then
+#            # Loop through releases
+#            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
+#              tag_name=$(echo "$release" | jq -r '.tag_name')
+#              name=$(echo "$release" | jq -r '.name')
+#              created_at=$(echo "$release" | jq -r '.created_at')
+#              echo "Release: $name"
+#              echo "Tag: $tag_name"
+#              echo "Created At: $created_at"
+#
+#              mkdir -p ./downloads/$tag_name
+#
+#              # copy the base doc from the GitHub repository
+#              # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ?
+#              #     so we clone in a tmp folder and then move the doc/ folder
+#
+#              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/tmpclone/
+#              cd ./downloads/tmpclone
+#              git sparse-checkout set doc
+#              git checkout $tag_name
+#              cd ../../
+#              mv ./downloads/tmpclone/doc ./downloads/$tag_name/
+#              rm -rf ./downloads/tmpclone
+#
+#
+#              # copy the databox-api-php doc from the docker image
+#
+#              mkdir -p ./downloads/$tag_name/databox-api-php
+#              echo "Pulling image: $tag_name"
+#              docker pull ${{env.PHRASEA_IMAGES}}:$tag_name
+#              IMAGE_ID=$(docker create ${{env.PHRASEA_IMAGES}}:$tag_name)
+#              docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/$tag_name/databox-api-php/ || echo "No doc/ folder found in image"
+#              docker rm -v $IMAGE_ID
+#
+#
+#              echo "-------------------------"
+#            done
+#
+#            tree ./downloads
+#          fi
+#
+#
+#      - uses: docker/setup-qemu-action@v2
+#      - uses: docker/setup-buildx-action@v2
+#
+#      - name: Log in to the Container registry
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ${{ env.IMAGE_REGISTRY }}
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Build and Push image
+#        uses: docker/build-push-action@v6
+#        with:
+#          context: ./
+#          file: ./importer/Dockerfile
+#          provenance: false
+#          push: true
+#          tags: |
+#            ${{ env.REGISTRY_NAMESPACE }}/ps-documentation-builder:latest
+#          build-args: |
+#            PHRASEA_TAG=${{ env.PHRASEA_TAG }}
+#            PHRASEA_REF=${{ env.PHRASEA_REF }}
