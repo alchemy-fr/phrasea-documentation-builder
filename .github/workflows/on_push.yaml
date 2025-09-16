@@ -65,7 +65,7 @@ jobs:
 
       ### if we have a specific tag, prepare a single version of documentation
 
-      # copy the databox-api-php doc from the docker image
+        # copy the databox-api-php doc from the docker image
       - name: List and Pull single image
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
@@ -76,7 +76,7 @@ jobs:
           docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
           docker rm -v $IMAGE_ID
 
-      # copy the base doc from the GitHub repository
+        # copy the base doc from the GitHub repository
       - name: Checkout Target Repository
         if: ${{env.PHRASEA_TAG != ''}}
         uses: actions/checkout@v4
@@ -112,7 +112,28 @@ jobs:
               echo "Release: $name"
               echo "Tag: $tag_name"
               echo "Created At: $created_at"
+
+              # copy the base doc from the GitHub repository
+                  
+              # Clone le repository en mode sparse-checkout
+              echo "Clonage du repository en mode sparse-checkout..."
+              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name/
           
+              # Se déplace dans le dossier cloné
+              cd ./downloads/$tag_name || exit
+
+              # Configure le sparse-checkout pour inclure uniquement le sous-répertoire
+              echo "Configuration du sparse-checkout pour le sous-répertoire: doc"
+              git sparse-checkout set doc
+          
+              # Change la branche si nécessaire
+              git checkout $tag_name
+              echo "Téléchargement terminé. Le sous-répertoire est disponible dans: ./downloads/$tag_name/doc"
+              cd ../../
+          
+          
+              # copy the databox-api-php doc from the docker image
+               
               mkdir -p ./downloads/$tag_name/databox-api-php
               echo "Pulling image: $tag_name"
               docker pull ${{env.PHRASEA_IMAGES}}:$tag_name
@@ -121,29 +142,6 @@ jobs:
               docker rm -v $IMAGE_ID
           
           
-              # Vérifie si git est installé
-              if ! command -v git &> /dev/null; then
-                echo "Erreur : git n'est pas installé."
-                exit 1
-              fi
-    
-              # Clone le repository en mode sparse-checkout
-              echo "Clonage du repository en mode sparse-checkout..."
-              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name/doc
-              
-              # Se déplace dans le dossier cloné
-              cd ./downloads/$tag_name/doc || exit
-  
-              # Configure le sparse-checkout pour inclure uniquement le sous-répertoire
-              echo "Configuration du sparse-checkout pour le sous-répertoire : doc"
-              git sparse-checkout set doc
-                
-              # Change la branche si nécessaire
-              git checkout $tag_name
-              
-              echo "Téléchargement terminé. Le sous-répertoire est disponible dans : ./downloads/$tag_name/doc"
-
-              cd ../../../
               echo "-------------------------"
             done
           
