@@ -121,29 +121,6 @@ jobs:
               echo "Tag: $tag_name"
               echo "Created At: $created_at"
 
-#              mkdir -p ./downloads/$tag_name
-#
-#              # copy the base doc from the GitHub repository
-#              # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ?
-#              #     so we clone in a tmp folder and then move the doc/ folder
-#
-#              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{vars.PHRASEA_GITHUB}}.git ./downloads/tmpclone/
-#              cd ./downloads/tmpclone
-#              git sparse-checkout set doc
-#              git checkout $tag_name
-#              cd ../../
-#              mv ./downloads/tmpclone/doc ./downloads/$tag_name/
-#              rm -rf ./downloads/tmpclone
-#
-#
-#              # copy the databox-api-php doc from the docker image
-#
-#              mkdir -p ./downloads/$tag_name/databox-api-php
-#              echo "Pulling image: $tag_name"
-#              docker pull ${{vars.PHRASEA_IMAGES}}:$tag_name
-#              IMAGE_ID=$(docker create ${{vars.PHRASEA_IMAGES}}:$tag_name)
-#              docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/$tag_name/databox-api-php/ || echo "No doc/ folder found in image"
-#              docker rm -v $IMAGE_ID
 
               export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
               export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
