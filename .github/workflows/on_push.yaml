@@ -23,6 +23,7 @@ env:
 jobs:
   pull-ecr-images:
     runs-on: ubuntu-latest
+    environment: sandbox-ci-documentation
 
     steps:
       - name: Dump vars
