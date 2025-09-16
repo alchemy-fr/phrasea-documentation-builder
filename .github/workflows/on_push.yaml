@@ -113,23 +113,19 @@ jobs:
               echo "Tag: $tag_name"
               echo "Created At: $created_at"
 
+              mkdir -p ./downloads/$tag_name
+          
               # copy the base doc from the GitHub repository
-                  
-              # Clone le repository en mode sparse-checkout
-              echo "Clonage du repository en mode sparse-checkout..."
-              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/$tag_name/
+              # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ? 
+              #     so we clone in a tmp folder and then move the doc/ folder
           
-              # Se déplace dans le dossier cloné
-              cd ./downloads/$tag_name || exit
-
-              # Configure le sparse-checkout pour inclure uniquement le sous-répertoire
-              echo "Configuration du sparse-checkout pour le sous-répertoire: doc"
-              git sparse-checkout set doc
-          
-              # Change la branche si nécessaire
+              git clone --depth 1 --filter=blob:none --sparse https://github.com/${{env.PHRASEA_GITHUB}}.git ./downloads/tmpclone/         
+              cd ./downloads/tmpclone
+              git sparse-checkout set doc          
               git checkout $tag_name
-              echo "Téléchargement terminé. Le sous-répertoire est disponible dans: ./downloads/$tag_name/doc"
               cd ../../
+              mv ./downloads/tmpclone/doc ./downloads/$tag_name/
+              rm -rf ./downloads/tmpclone
           
           
               # copy the databox-api-php doc from the docker image
