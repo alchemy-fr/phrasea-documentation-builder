@@ -29,6 +29,10 @@ jobs:
       - name: Dump vars
         run: |
           echo "===== on_push.yaml ====="
+          echo "vars.PHRASEA_GITHUB = ${{ vars.PHRASEA_GITHUB }}"
+          echo "vars.PHRASEA_IMAGES = ${{ vars.PHRASEA_IMAGES }}"
+          echo "vars.PHRASEA_TAG = ${{ vars.PHRASEA_TAG }}"
+          echo "vars.PHRASEA_REF = ${{ vars.PHRASEA_REF }}"
           echo "env.PHRASEA_GITHUB = ${{ env.PHRASEA_GITHUB }}"
           echo "env.PHRASEA_IMAGES = ${{ env.PHRASEA_IMAGES }}"
           echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
