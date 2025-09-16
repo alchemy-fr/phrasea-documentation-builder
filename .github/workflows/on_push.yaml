@@ -46,6 +46,8 @@ jobs:
           echo "github.event.client_payload.PHRASEA_REF = ${{ github.event.client_payload.PHRASEA_REF }}"
           echo "env.REGISTRY = ${{ env.REGISTRY }}"
           echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
+          pwd
+          ls -alh .
 
       - name: Configure AWS  Credentials
         env:
@@ -124,7 +126,7 @@ jobs:
 
               export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
               export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
-              ./download_tag.sh "$tag_name"
+              ./importer/download_tag.sh "$tag_name"
           
               echo "-------------------------"
             done
