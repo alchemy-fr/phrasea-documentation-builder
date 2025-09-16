@@ -13,6 +13,7 @@ services:
       dockerfile: ./importer/Dockerfile
       args:
         - PHRASEA_TAG=${PHRASEA_TAG}
+        - PHRASEA_REF=${PHRASEA_REF}
     networks:
       - internal
 #    volumes:
@@ -24,6 +25,4 @@ services:
       - PHRASEA_GITHUB=${PHRASEA_GITHUB}
       - PHRASEA_IMAGES=${PHRASEA_IMAGES}
       - PHRASEA_TAG=${PHRASEA_TAG}
-      - DOC_REPO=${DOC_REPO}
-      - DOC_BRANCH=${DOC_BRANCH}
-      - DOC_GITHUB_TOKEN=${DOC_GITHUB_TOKEN}
+      - PHRASEA_REF=${PHRASEA_REF}

@@ -19,7 +19,7 @@ class build extends Command
 {
     private const string GITHUB_URL = 'https://github.com';
     private const string GITHUB_API_URL = 'https://api.github.com';
-    private const string PHRASEA_REPO = 'alchemy-fr/sandbox-ci-documentation';
+
     private const string DOC_REPO = 'alchemy-fr/phrasea-documentation';
     private const string DOC_BRANCH = 'main';
 
@@ -35,7 +35,6 @@ class build extends Command
     private OutputInterface $output;
 
 //    private string $githubToken;
-    private string $phrasea_repo;
     private string $doc_repo;
     private string $doc_branch;
     private Filesystem $filesystem;
@@ -53,7 +52,6 @@ class build extends Command
         $this->input = $input;
         $this->output = $output;
 
-        $this->phrasea_repo = getenv('PHRASEA_REPO') ?: self::PHRASEA_REPO;
         $this->doc_repo     = getenv('DOC_REPO') ?: self::DOC_REPO;
         $this->doc_branch   = getenv('DOC_BRANCH') ?: self::DOC_BRANCH;
 
