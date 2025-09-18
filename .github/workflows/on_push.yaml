@@ -30,9 +30,11 @@ jobs:
       - name: Dump vars
         run: |
           echo "===== on_push.yaml ====="
+          # vars comes from https://github.com/alchemy-fr/phrasea-documentation-builder/settings/environments
           echo "vars.NEXT_BRANCH = ${{ vars.NEXT_BRANCH }}"
           echo "vars.PHRASEA_GITHUB = ${{ vars.PHRASEA_GITHUB }}"
           echo "vars.PHRASEA_IMAGES = ${{ vars.PHRASEA_IMAGES }}"
+          
           echo "vars.PHRASEA_TAG = ${{ vars.PHRASEA_TAG }}"
           echo "vars.PHRASEA_REF = ${{ vars.PHRASEA_REF }}"
           echo "env.PHRASEA_GITHUB = ${{ env.PHRASEA_GITHUB }}"
