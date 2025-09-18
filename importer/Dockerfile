@@ -29,7 +29,8 @@ RUN ["php", "application.php", "build"]
 
 WORKDIR /srv/docusaurus/phrasea
 RUN ["pnpm", "run", "build" ]
+RUN tree build
 
 FROM nginx:1.29-alpine
-COPY --from=importer /srv/app/build/ /usr/share/nginx/html/
+COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 
