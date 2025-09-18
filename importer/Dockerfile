@@ -27,6 +27,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN ["php", "application.php", "build", "-vvv"]
 
+
 #WORKDIR /srv/docusaurus/phrasea
 #RUN ["pnpm", "run", "build" ]
 #RUN tree build
