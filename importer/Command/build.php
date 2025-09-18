@@ -17,26 +17,12 @@ use Symfony\Component\Yaml\Yaml;
 #[AsCommand(name: 'build')]
 class build extends Command
 {
-    private const string GITHUB_URL = 'https://github.com';
-    private const string GITHUB_API_URL = 'https://api.github.com';
-
-    private const string DOC_REPO = 'alchemy-fr/phrasea-documentation';
-    private const string DOC_BRANCH = 'main';
-
     private const string DOCUSAURUS_PROJECT_DIR = __DIR__ . '/../../docusaurus/phrasea';
     private const string DOWNLOAD_DIR = __DIR__ . '/../downloads';
-    private const string WORKSPACE_DIR = __DIR__ . '/../workspace';
-    private const string CLONE_DIRNAME = 'phrasea-documentation';
-    private const string CLONE_DIR = self::WORKSPACE_DIR . '/' . self::CLONE_DIRNAME;
-    private const string DOCS_DIRNAME = 'docs';
-    private const string DOCS_DIR = self::CLONE_DIR . '/' . self::DOCS_DIRNAME;
+
 
     private InputInterface $input;
     private OutputInterface $output;
-
-//    private string $githubToken;
-    private string $doc_repo;
-    private string $doc_branch;
     private Filesystem $filesystem;
 
     protected function configure(): void
@@ -52,9 +38,6 @@ class build extends Command
         $this->input = $input;
         $this->output = $output;
 
-        $this->doc_repo     = getenv('DOC_REPO') ?: self::DOC_REPO;
-        $this->doc_branch   = getenv('DOC_BRANCH') ?: self::DOC_BRANCH;
-
         $this->filesystem = new Filesystem();
 
         $output->writeln('------------------- running php -------');
@@ -62,71 +45,74 @@ class build extends Command
             $output->writeln($env . '=' . getenv($env));
         }
 
-$this->filesystem->mkdir(__DIR__ . '/../build');
-//$this->filesystem->mirror(__DIR__ . '/../downloads/', __DIR__ . '/../build/');
-        $html = "<html><body><h1>Download dir contains:</h1>\n<ul>\n";
-        $di = new \DirectoryIterator(self::DOWNLOAD_DIR);
-        foreach ($di as $file) {
-            if ($file->isDot() || !$file->isDir()) {
+        $versions = [];
+        foreach(new \FilesystemIterator(self::DOWNLOAD_DIR, \FilesystemIterator::SKIP_DOTS) as $versionDir) {
+            if (!$versionDir->isDir()) {
                 continue;
             }
-            $output->writeln('Download dir contains: ' . $file->getFilename());
-            $html .= '<li>' . $file->getFilename() . "</li>\n";
-        }
-        $html .= "</ul></body></html>\n";
-        file_put_contents(__DIR__ . '/../build/index.html', $html);
-return Command::SUCCESS;
-
-
-        try {
-            if (getenv('PHRASEA_TAG')) {
-                return $this->exportByTag(getenv('PHRASEA_TAG'));
+            $tag = $versionDir->getFilename();
+            $output->writeln('Download dir contains: ' . $tag);
+            try {
+                $versions[$tag] = new Semver\Version($tag);
             }
-        } catch (\Exception $e) {
-            $output->writeln('Error: ' . $e->getMessage());
-            return Command::FAILURE;
+            catch (SemVer\Exceptions\InvalidVersionException $e) {
+                $versions[$tag] = null;
+            }
+        }
+        uasort($versions, function ($a, $b) {
+            if($a === null || $b === null) {
+                return $a === $b ? 0 : ($a === null ? -1 : 1);
+            }
+            return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
+        });
+
+        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
+        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
+        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versions.json');
+
+        // here the first version is the lowest one, it will go to /docs THEN VERSIONED
+        // the last version is the highest (latest) one, it will go to /docs ONLY
+
+        $n = count($versions);
+        foreach ($versions as $tag => $semver) {
+
+            $this->filesystem->mirror(self::DOWNLOAD_DIR . '/' . $tag . '/doc/', self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/');
+
+            // list specific applications (directories at /, except /doc which is the "general" documentation)
+            $apps = [];
+            $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag, \FilesystemIterator::SKIP_DOTS);
+            foreach ($di2 as $appDir) {
+                if (!$appDir->isDir() || $appDir->getFilename() === 'doc' || $appDir->getFilename() === 'docmerged') {
+                    continue;
+                }
+                $apps[] = $appDir->getFilename();
+            }
+
+            $this->fusionAppsToGeneral($tag, $apps);
+            $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
+
+            if ($n > 1) {
+                // version
+                $this->runCommand(
+                    ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
+                    self::DOCUSAURUS_PROJECT_DIR
+                );
+            }
+            $n--;
         }
 
         return Command::SUCCESS;
     }
 
-    private function exportByTag(string $tag): int
+    private function fusionAppsToGeneral(string $tag, array $apps): void
     {
-        $unzipDir = self::DOWNLOAD_DIR . "/doc";
+        foreach ($apps as $app) {
+            $this->output->writeln("Merging app $app into general doc for tag $tag");
 
-        $this->compileFiles($unzipDir, $tag);
+            $src = self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc';
+            $dst = self::DOWNLOAD_DIR . '/' . $tag . '/docmerged';
 
-        try {
-            $semverTag = new Semver\Version($tag);
-            $version = $semverTag->major . '.' . $semverTag->minor;
-        }
-        catch (SemVer\Exceptions\InvalidVersionException $e) {
-            $version = $tag;
-        }
-
-        return $this->generateAndPush($version);
-    }
-
-    private function generateAndPush(string $version): int
-    {
-        try {
-            // create the api documentation from the json schema
-            $this->runCommand(
-                ['pnpm', 'run', 'gen-api-docs', 'databox'],
-                self::DOCUSAURUS_PROJECT_DIR
-            );
-
-            $this->runCommand(
-                ['pnpm', 'build'],
-                self::DOCUSAURUS_PROJECT_DIR,
-                3600
-            );
-
-            return Command::SUCCESS;
-
-        } catch (\Exception $e) {
-            $this->output->writeln('Error: ' . $e->getMessage());
-            return Command::FAILURE;
+            $this->filesystem->mirror($src, $dst);
         }
     }
 
@@ -150,73 +136,28 @@ return Command::SUCCESS;
         $process->setIdleTimeout($timeout);
 
         $process->run(function ($type, $buffer): void {
-            $this->output->write($buffer);
+//            $this->output->write($buffer);
         });
 
         if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
         }
-
-        $this->output->writeln($process->getOutput());
     }
 
     private function compileFiles(string $unzipDir, string $version): void
     {
-        $unzipDir = rtrim($unzipDir, '/');
-        $generatedDocDir = $unzipDir . '/_generatedDoc';
-        $generatedDocDirLen = strlen($generatedDocDir);
+        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/phrasea');
+        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/databox-api');
 
-        // ---- first dispatch _generatedDoc files to the same subdirectories in the zip directory
-        //      = move files one subdir up
-        $createdDirs = [];
-        $copiedFiles = [];
-        try {
-            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($generatedDocDir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
-            /** @var SplFileInfo $file */
-            foreach ($iterator as $file) {
-                $relativePathname = substr($file->getPathname(), $generatedDocDirLen);
-
-                $this->output->writeln($relativePathname . ' => ' . $file->getFilename());
-                if ($file->isDir()) {
-                    $d = $unzipDir . $relativePathname;
-                    if (!$this->filesystem->exists($d)) {
-                        $this->filesystem->mkdir($d);
-                        $this->output->writeln("Created directory: $d");
-                        $createdDirs[] = $d;
-                    }
-                }
-                elseif ($file->isFile()) {
-                    $d = $unzipDir . $relativePathname;
-                    if (!$this->filesystem->exists($d) || !file_exists($d)) {
-                        $this->filesystem->copy($file->getPathname(), $d, true);
-                        $this->output->writeln("Copied file: " . $file->getPathname() . " to " . $d);
-                        $copiedFiles[] = $d;
-                    }
-                    else {
-                        $this->output->writeln("File already exists, skipping: " . $d);
-                    }
-                }
-            }
-        }
-        catch (\Exception $e) {
-            // _generatedDoc directory can not exist
-        }
-
-        $this->output->writeln("");
-
-        // ---- then dispatch the files in the documentation directory
+        // ---- dispatch the files in the documentation directory
         $translations = [];
         $scan = function($subdir, $depth=0) use (&$scan, $unzipDir, &$translations) {
             $tab = str_repeat('  ', $depth);
             $scandir =  $unzipDir . $subdir;
             $this->output->writeln(sprintf("%sScanning %s", $tab, $scandir));
-            $iterator = new \DirectoryIterator($scandir);
-            /** @var SplFileInfo $file */
-            foreach ($iterator as $file) {
 
-                if ($file->isDot()) {
-                    continue; // skip . and ..
-                }
+            /** @var SplFileInfo $file */
+            foreach (new \FilesystemIterator($scandir, \FilesystemIterator::SKIP_DOTS) as $file) {
 
                 if ($file->isFile()) {
                     if($file->getFilename() === '_locales.yml' || $file->getFilename() === '.gitkeep') {
@@ -267,7 +208,7 @@ return Command::SUCCESS;
 
         $scan('');
 
-        $this->filesystem->remove($unzipDir);
+        // $this->filesystem->remove($unzipDir);
 
         // dump translations to json files
         foreach ($translations as $locale => $translation) {
@@ -286,5 +227,11 @@ return Command::SUCCESS;
         ];
         $this->output->writeln("Writing version to: " . $target);
         file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        // create the api documentation from the json schema
+        $this->runCommand(
+            ['pnpm', 'run', 'gen-api-docs', 'databox'],
+            self::DOCUSAURUS_PROJECT_DIR
+        );
     }
 }

@@ -6,13 +6,13 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-fake-databox-api-php
 
-  REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
+
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 
   # sent by workflow_dispatch from phrasea:on-push
-  # PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || '' }}
-  PHRASEA_TAG: master
+  PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || '' }}
+  # PHRASEA_TAG: master
   PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
 
   # where to download from phrasea (releases on docker image(s) for applications doc(s) ; github repo for base doc)
@@ -46,18 +46,17 @@ jobs:
           echo "github.event.client_payload.PHRASEA_TAG = ${{ github.event.client_payload.PHRASEA_TAG }}"
           echo "github.event.client_payload.PHRASEA_REF = ${{ github.event.client_payload.PHRASEA_REF }}"
           echo "env.REGISTRY = ${{ env.REGISTRY }}"
-          echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
-          pwd
-          ls -alh .
+          echo "env.IMAGE_REGISTRY = ${{ env.IMAGE_REGISTRY }}"
 
-      - name: Configure AWS  Credentials
-        env:
-          AWS_ECR_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+
+#      - name: Configure AWS  Credentials
+#        env:
+#          AWS_ECR_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#          aws-region: us-east-1
 
 #      - name: Authenticate Docker to ECR
 #        run: |
@@ -76,34 +75,12 @@ jobs:
 
       ### if we have a specific tag, prepare a single version of documentation
 
-        # copy the databox-api-php doc from the docker image
       - name: List and Pull single image
         if: ${{env.PHRASEA_TAG != ''}}
         run: |
           export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
           export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
           ./importer/download_tag.sh "${{env.PHRASEA_TAG}}"
-
-#          mkdir -p ./downloads/${{env.PHRASEA_TAG}}/databox-api-php
-#          echo "Pulling image: ${{env.PHRASEA_TAG}}"
-#          docker pull ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}}
-#          IMAGE_ID=$(docker create ${{vars.PHRASEA_IMAGES}}:${{env.PHRASEA_TAG}})
-#          docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/${{env.PHRASEA_TAG}}/databox-api-php/ || echo "No doc/ folder found in image"
-#          docker rm -v $IMAGE_ID
-
-#        # copy the base doc from the GitHub repository
-#      - name: Checkout Target Repository
-#        if: ${{env.PHRASEA_TAG != ''}}
-#        uses: actions/checkout@v4
-#        with:
-#          repository: ${{vars.PHRASEA_GITHUB}}
-#          ref: ${{env.PHRASEA_TAG}}
-#          path: sandbox-ci-documentation
-#
-#      - name: Copy Subdirectory
-#        if: ${{env.PHRASEA_TAG != ''}}
-#        run: |
-#          cp -r ./sandbox-ci-documentation/doc ./downloads/${{env.PHRASEA_TAG}}/
 
 
       ### if we do not have a specific tag, prepare all x.y.z versions of documentation
@@ -124,18 +101,16 @@ jobs:
             # Loop through releases
             echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
               tag_name=$(echo "$release" | jq -r '.tag_name')
-              name=$(echo "$release" | jq -r '.name')
-              created_at=$(echo "$release" | jq -r '.created_at')
-              echo "Release: $name"
-              echo "Tag: $tag_name"
-              echo "Created At: $created_at"
+              # name=$(echo "$release" | jq -r '.name')
+              # created_at=$(echo "$release" | jq -r '.created_at')
+              # echo "Release: $name"
+              # echo "Tag: $tag_name"
+              # echo "Created At: $created_at"
 
               ./importer/download_tag.sh "$tag_name"
           
-              echo "-------------------------"
+              # echo "-------------------------"
             done
-
-            tree ./downloads
           fi
           
 
@@ -157,7 +132,7 @@ jobs:
           provenance: false
           push: true
           tags: |
-            ${{ env.REGISTRY_NAMESPACE }}/ps-documentation-builder:latest
+            ${{ env.IMAGE_REGISTRY }}/ps-documentation-builder:latest
           build-args: |
             PHRASEA_TAG=${{ env.PHRASEA_TAG }}
             PHRASEA_REF=${{ env.PHRASEA_REF }}

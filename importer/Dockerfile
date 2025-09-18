@@ -16,16 +16,19 @@ USER app
 
 WORKDIR /srv/docusaurus/phrasea
 COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
-# RUN pnpm install
+RUN pnpm install
 
 COPY --chown=app:app ./importer /srv/app
-COPY --chown=app:app ./downloads /srv/app/downloads
+
 RUN tree /srv/app/downloads
 
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
 RUN ["php", "application.php", "build"]
+
+WORKDIR /srv/docusaurus/phrasea
+RUN ["pnpm", "docusaurus", "build" ]
 
 FROM nginx:1.29-alpine
 COPY --from=importer /srv/app/build/ /usr/share/nginx/html/

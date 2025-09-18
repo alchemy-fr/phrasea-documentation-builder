@@ -7,7 +7,7 @@ networks:
 
 services:
   builder:
-    # image: "alchemy-fr/phrasea-documentation:latest"
+    image: "alchemy-fr/ps-documentation-builder:latest"
     build:
       context: ./
       dockerfile: ./importer/Dockerfile
@@ -20,7 +20,7 @@ services:
 #        - ./importer/:/srv/app
 #        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
     ports:
-      - "3078:3000"
+      - "8080:80"
     environment:
       - PHRASEA_GITHUB=${PHRASEA_GITHUB}
       - PHRASEA_IMAGES=${PHRASEA_IMAGES}
