@@ -17,7 +17,7 @@ echo "================ tmpclone ================ "
 tree .
 
 cd ../../../
-mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/
+mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/doc
 rm -rf ./importer/downloads/tmpclone
 echo "================ downloads $1 after gh clone ================ "
 tree ./importer/downloads/$1
