@@ -9,19 +9,19 @@ mkdir -p ./downloads/$1
 # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ?
 #     so we clone in a tmp folder and then move the doc/ folder
 
-git clone --depth 1 --filter=blob:none --sparse https://github.com/$PHRASEA_GITHUB.git ./downloads/tmpclone/
-cd ./downloads/tmpclone
+git clone --depth 1 --filter=blob:none --sparse https://github.com/$PHRASEA_GITHUB.git ./importer/downloads/tmpclone/
+cd ./importer/downloads/tmpclone
 git sparse-checkout set doc
 git checkout $1
-cd ../../
-mv ./downloads/tmpclone/doc ./downloads/$1/
-rm -rf ./downloads/tmpclone
+cd ../../../
+mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/
+rm -rf ./importer/downloads/tmpclone
 
 
 # copy the databox-api-php doc from the docker image
 
-mkdir -p ./downloads/$1/databox-api-php
+mkdir -p ./importer/downloads/$1/databox-api-php
 docker pull $PHRASEA_IMAGES:$1
 IMAGE_ID=$(docker create $PHRASEA_IMAGES:$1)
-docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./downloads/$1/databox-api-php/ || echo "No doc/ folder found in image"
+docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./importer/downloads/$1/databox-api-php/ || echo "No doc/ folder found in image"
 docker rm -v $IMAGE_ID
