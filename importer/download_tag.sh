@@ -9,6 +9,7 @@ mkdir -p ./downloads/$1
 # nb: sparse checkout is experimental and also clone some unwnanted files from / (like /README.md) ?
 #     so we clone in a tmp folder and then move the doc/ folder
 
+mkdir -p ./importer/downloads/$1/doc
 git clone --depth 1 --filter=blob:none --sparse https://github.com/$PHRASEA_GITHUB.git ./importer/downloads/tmpclone/
 cd ./importer/downloads/tmpclone
 git sparse-checkout set doc
