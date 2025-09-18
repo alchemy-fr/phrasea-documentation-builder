@@ -28,10 +28,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN ["php", "application.php", "build", "-vvv"]
 
 
-WORKDIR /srv/docusaurus/phrasea
-RUN ["pnpm", "run", "build" ]
-RUN tree build
-
-FROM nginx:1.29-alpine
-COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
+#WORKDIR /srv/docusaurus/phrasea
+#RUN ["pnpm", "run", "build" ]
+#RUN tree build
+#
+#FROM nginx:1.29-alpine
+#COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 
