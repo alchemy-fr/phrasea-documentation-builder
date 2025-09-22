@@ -1,10 +1,10 @@
 # syntax=docker.io/docker/dockerfile:1
 # FROM ghcr.io/alchemy-fr/fake-phrasea:${PHRASEA_TAG} AS phrasea
+FROM php:8.3.11-cli-alpine3.20 AS importer
+
 ARG PHRASEA_REFNAME=master
 ARG PHRASEA_REFTYPE=branch
 ARG PHRASEA_DATETIME=20000101000000
-
-FROM php:8.3.11-cli-alpine3.20 AS importer
 
 RUN apk add --no-interactive git bash nano nodejs npm \
     && npm install -g pnpm@^9.3.0
@@ -27,16 +27,13 @@ RUN tree /srv/app/downloads
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
-ENV PHRASEA_REFNAME=${PHRASEA_REFNAME}
-ENV PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
-ENV PHRASEA_DATETIME=${PHRASEA_DATETIME}
 RUN ["php", "application.php", "-vvv", "build"]
-#
-#
-#WORKDIR /srv/docusaurus/phrasea
-#RUN ["pnpm", "run", "build" ]
-#RUN tree build
-#
-#FROM nginx:1.29-alpine
-#COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
+
+
+WORKDIR /srv/docusaurus/phrasea
+RUN ["pnpm", "run", "build" ]
+RUN tree build
+
+FROM nginx:1.29-alpine
+COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 

@@ -74,7 +74,7 @@ class build extends Command
 
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
-        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versions.json');
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $n = count($versions);
         foreach ($versions as $tag => $semver) {
