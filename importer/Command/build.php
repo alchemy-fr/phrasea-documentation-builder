@@ -59,19 +59,22 @@ class build extends Command
                 $versions[$tag] = null;
             }
         }
+        $this->output->writeln('=========== Versions found: ' . var_export($versions, true));
         uasort($versions, function ($a, $b) {
             if($a === null || $b === null) {
                 return $a === $b ? 0 : ($a === null ? -1 : 1);
             }
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
+        $this->output->writeln('=========== Versions sorted: ' . var_export($versions, true));
         // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
         if(isset($versions['master'])) {
             $master = $versions['master'];
             unset($versions['master']);
             $versions['master'] = $master;
+            $this->output->writeln('=========== Versions fixed: ' . var_export($versions, true));
         }
-$this->output->writeln('=========== Versions found: ' . var_export($versions, true));
+$this->output->writeln('=========== Versions out: ' . var_export($versions, true));
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
