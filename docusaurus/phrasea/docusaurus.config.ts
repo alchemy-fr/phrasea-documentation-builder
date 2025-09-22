@@ -5,12 +5,14 @@ import type * as Preset from "@docusaurus/preset-classic";
 import type {Config} from "@docusaurus/types";
 import type * as Plugin from "@docusaurus/types/src/plugin";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
-import * as version from "./version.json"
+// @ts-ignore
+import * as version from "./version.json";
+// @ts-ignore
 import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
-    tagline: "tag: " + version.tag + "  ;  ref: " + versions.ref,
+    tagline: "refname: " + version.refname + "  ;  type: " + versions.reftype + "  ;  datetime: " + version.datetime,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
    // onBrokenLinks: "throw",

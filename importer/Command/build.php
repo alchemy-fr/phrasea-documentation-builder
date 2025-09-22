@@ -41,7 +41,7 @@ class build extends Command
         $this->filesystem = new Filesystem();
 
         $output->writeln('------------------- running php -------');
-        foreach(['PHRASEA_TAG', 'PHRASEA_REF'] as $env) {
+        foreach(['PHRASEA_REFNAME', 'PHRASEA_REFTYPE', 'PHRASEA_DATETIME'] as $env) {
             $output->writeln($env . '=' . getenv($env));
         }
 
@@ -104,14 +104,6 @@ class build extends Command
             $n--;
         }
 
-        // dump version
-        $target = self::DOCUSAURUS_PROJECT_DIR . '/version.json';
-        $version = [
-            'tag' => getenv('PHRASEA_TAG'),
-            'ref' => getenv('PHRASEA_REF'),
-        ];
-        $this->output->writeln("Writing version to: " . $target);
-        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         return Command::SUCCESS;
     }
@@ -221,6 +213,16 @@ class build extends Command
         $scan('');
 
         // $this->filesystem->remove($unzipDir);
+
+        // dump version
+        $target = self::DOCUSAURUS_PROJECT_DIR . '/version.json';
+        $version = [
+            'refname' => getenv('PHRASEA_REFNAME'),
+            'reftype' => getenv('PHRASEA_REFTYPE'),
+            'datetime' => getenv('PHRASEA_DATETIME'),
+        ];
+        $this->output->writeln("Writing version to: " . $target);
+        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         // dump translations to json files
         foreach ($translations as $locale => $translation) {
