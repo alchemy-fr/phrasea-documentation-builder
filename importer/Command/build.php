@@ -71,7 +71,7 @@ class build extends Command
             unset($versions['master']);
             $versions['master'] = $master;
         }
-
+$this->output->writeln('=========== Versions found: ' . var_export($versions, true));
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
