@@ -67,8 +67,8 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           # Fetch releases
           # -------- to not explode api limits, use a static file for tests -----------
-          # response=$(curl -s "https://api.github.com/repos/${{vars.PHRASEA_GITHUB}}/releases")
-          response=$(cat ./releases_sandbox.json)
+          response=$(curl -s "https://api.github.com/repos/${{vars.PHRASEA_GITHUB}}/releases")
+          # response=$(cat ./releases_sandbox.json)
           # ---------------------------------------------------------------------------
           # Check if the response is valid
           if [ $? -eq 0 ]; then
