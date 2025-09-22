@@ -2,7 +2,7 @@
 # FROM ghcr.io/alchemy-fr/fake-phrasea:${PHRASEA_TAG} AS phrasea
 ARG PHRASEA_REFNAME=master
 ARG PHRASEA_REFTYPE=branch
-ARG PHRASEA_DATETIME=20250101123456
+ARG PHRASEA_DATETIME=20000101000000
 
 FROM php:8.3.11-cli-alpine3.20 AS importer
 
@@ -27,7 +27,7 @@ RUN tree /srv/app/downloads
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
-#RUN ["php", "application.php", "build", "-vvv"]
+RUN ["php", "application.php", "build", "-vvv"]
 #
 #
 #WORKDIR /srv/docusaurus/phrasea
