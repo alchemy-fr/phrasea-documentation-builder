@@ -12,8 +12,9 @@ services:
       context: ./
       dockerfile: ./importer/Dockerfile
       args:
-        - PHRASEA_TAG=${PHRASEA_TAG}
-        - PHRASEA_REF=${PHRASEA_REF}
+        - PHRASEA_REFNAME=${PHRASEA_REFNAME}
+        - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
+        - PHRASEA_DATETIME=${PHRASEA_DATETIME}
     networks:
       - internal
     volumes:
@@ -24,5 +25,6 @@ services:
     environment:
       - PHRASEA_GITHUB=${PHRASEA_GITHUB}
       - PHRASEA_IMAGES=${PHRASEA_IMAGES}
-      - PHRASEA_TAG=${PHRASEA_TAG}
-      - PHRASEA_REF=${PHRASEA_REF}
+      - PHRASEA_REFNAME=${PHRASEA_REFNAME}
+      - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
+      - PHRASEA_DATETIME=${PHRASEA_DATETIME}
