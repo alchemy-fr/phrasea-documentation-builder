@@ -68,7 +68,7 @@ class build extends Command
         });
         $this->output->writeln('=========== Versions sorted: ' . var_export($versions, true));
         // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
-        if(isset($versions['master'])) {
+        if(array_key_exists('master', $versions)) {
             $master = $versions['master'];
             unset($versions['master']);
             $versions['master'] = $master;
