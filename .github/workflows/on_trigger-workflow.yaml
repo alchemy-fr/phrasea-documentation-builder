@@ -5,18 +5,42 @@ on:
       types: [trigger-workflow]
 
 env:
-  REGISTRY_NAMESPACE: ghcr.io/${{ github.repository_owner }}
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-fake-databox-api-php
+
+
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
-  PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || 'latest' }}
+
+
+  # sent by workflow_dispatch from phrasea:on-push
+  PHRASEA_TAG: ${{ github.event.client_payload.PHRASEA_TAG || '' }}
+  # PHRASEA_TAG: master
   PHRASEA_REF: ${{ github.event.client_payload.PHRASEA_REF || '' }}
+
+  # where to download from phrasea (releases on docker image(s) for applications doc(s) ; github repo for base doc)
+  # PHRASEA_GITHUB: "alchemy-fr/phrasea"
+  # PHRASEA_IMAGES: "public.ecr.aws/alchemyfr/ps-databox-api-php"
+#  PHRASEA_GITHUB: "alchemy-fr/sandbox-ci-documentation"
+#  PHRASEA_IMAGES: "ghcr.io/alchemy-fr/ps-fake-databox-api-php"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: sandbox-ci-documentation
+
     steps:
       - name: Dump vars
         run: |
-          echo "===== on_trigger-workflow.yaml ====="
+          echo "===== on_push.yaml ====="
+          # vars comes from https://github.com/alchemy-fr/phrasea-documentation-builder/settings/environments
+          echo "vars.NEXT_BRANCH = ${{ vars.NEXT_BRANCH }}"
+          echo "vars.PHRASEA_GITHUB = ${{ vars.PHRASEA_GITHUB }}"
+          echo "vars.PHRASEA_IMAGES = ${{ vars.PHRASEA_IMAGES }}"
+          
+          echo "vars.PHRASEA_TAG = ${{ vars.PHRASEA_TAG }}"
+          echo "vars.PHRASEA_REF = ${{ vars.PHRASEA_REF }}"
+          echo "env.PHRASEA_GITHUB = ${{ env.PHRASEA_GITHUB }}"
+          echo "env.PHRASEA_IMAGES = ${{ env.PHRASEA_IMAGES }}"
           echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
           echo "env.PHRASEA_REF = ${{ env.PHRASEA_REF }}"
           echo "github.ref = ${{ github.ref }}"
@@ -25,40 +49,81 @@ jobs:
           echo "github.repository = ${{ github.repository }}"
           echo "github.event.release.tag_name = ${{ github.event.release.tag_name }}"
           echo "github.event.client_payload.PHRASEA_TAG = ${{ github.event.client_payload.PHRASEA_TAG }}"
+          echo "github.event.client_payload.PHRASEA_REF = ${{ github.event.client_payload.PHRASEA_REF }}"
           echo "env.REGISTRY = ${{ env.REGISTRY }}"
-          echo "env.REGISTRY_NAMESPACE = ${{ env.REGISTRY_NAMESPACE }}"
+          echo "env.IMAGE_REGISTRY = ${{ env.IMAGE_REGISTRY }}"
 
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 30
-
-      - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v2
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./
-          file: ./importer/Dockerfile
-          provenance: false
-          push: true
-          tags: |
-            ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
-          build-args: |
-            PHRASEA_TAG=${{ env.PHRASEA_TAG }}
-
-      - name: build and export to doc repository
-        run: |
-          docker compose run --rm \
-          -e DOC_GITHUB_TOKEN="${{ secrets.DOC_GITHUB_TOKEN || '' }}" \
-          -e PHRASEA_TAG="${{ env.PHRASEA_TAG }}" \
-          -e PHRASEA_COMMIT_MSG="${{ env.PHRASEA_COMMIT_MSG }}" \
-          builder
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 30
+#
+#
+#        ### if we have a specific tag, prepare a single version of documentation
+#
+#      - name: List and Pull single image
+#        if: ${{env.PHRASEA_TAG != ''}}
+#        run: |
+#          export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
+#          export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
+#          ./importer/download_tag.sh "${{env.PHRASEA_TAG}}"
+#
+#
+#      ### if we do not have a specific tag, prepare all x.y.z versions of documentation
+#
+#      - name: List and Pull all images from releases
+#        if: ${{env.PHRASEA_TAG == ''}}
+#        run: |
+#          echo "Fetching tags from github:phrasea releases"
+#          # Fetch releases
+#          # -------- to not explode api limits, use a static file for tests -----------
+#          # response=$(curl -s "https://api.github.com/repos/${{vars.PHRASEA_GITHUB}}/releases")
+#          response=$(cat ./releases_sandbox.json)
+#          # ---------------------------------------------------------------------------
+#          # Check if the response is valid
+#          if [ $? -eq 0 ]; then
+#            export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
+#            export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
+#            # Loop through releases
+#            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
+#              tag_name=$(echo "$release" | jq -r '.tag_name')
+#              # name=$(echo "$release" | jq -r '.name')
+#              # created_at=$(echo "$release" | jq -r '.created_at')
+#              # echo "Release: $name"
+#              # echo "Tag: $tag_name"
+#              # echo "Created At: $created_at"
+#
+#              ./importer/download_tag.sh "$tag_name"
+#
+#              # echo "-------------------------"
+#            done
+#          fi
+#
+#          ./importer/download_tag.sh ${{vars.NEXT_BRANCH}}
+#
+#
+#          tree ./importer/downloads/
+#
+#
+#      - uses: docker/setup-qemu-action@v2
+#      - uses: docker/setup-buildx-action@v2
+#
+#      - name: Log in to the Container registry
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ${{ env.IMAGE_REGISTRY }}
+#          username: ${{ github.actor }}
+#          password: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Build and Push image
+#        uses: docker/build-push-action@v6
+#        with:
+#          context: ./
+#          file: ./importer/Dockerfile
+#          provenance: false
+#          push: true
+#          tags: |
+#            ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:latest
+#          build-args: |
+#            PHRASEA_TAG=${{ env.PHRASEA_TAG }}
+#            PHRASEA_REF=${{ env.PHRASEA_REF }}

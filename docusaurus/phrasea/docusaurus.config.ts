@@ -10,7 +10,7 @@ import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
-    tagline: "Version " + version.tag,
+    tagline: "tag: " + version.tag + "  ;  ref: " + versions.ref,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
    // onBrokenLinks: "throw",

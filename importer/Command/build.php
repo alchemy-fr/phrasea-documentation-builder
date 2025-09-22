@@ -65,13 +65,16 @@ class build extends Command
             }
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
+        // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
+        if(isset($versions['master'])) {
+            $master = $versions['master'];
+            unset($versions['master']);
+            $versions['master'] = $master;
+        }
 
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versions.json');
-
-        // here the first version is the lowest one, it will go to /docs THEN VERSIONED
-        // the last version is the highest (latest) one, it will go to /docs ONLY
 
         $n = count($versions);
         foreach ($versions as $tag => $semver) {
@@ -100,6 +103,15 @@ class build extends Command
             }
             $n--;
         }
+
+        // dump version
+        $target = self::DOCUSAURUS_PROJECT_DIR . '/version.json';
+        $version = [
+            'tag' => getenv('PHRASEA_TAG'),
+            'ref' => getenv('PHRASEA_REF'),
+        ];
+        $this->output->writeln("Writing version to: " . $target);
+        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         return Command::SUCCESS;
     }
@@ -219,14 +231,6 @@ class build extends Command
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
-
-        // dump version
-        $target = self::DOCUSAURUS_PROJECT_DIR . '/version.json';
-        $version = [
-            'tag' => $version
-        ];
-        $this->output->writeln("Writing version to: " . $target);
-        file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         // create the api documentation from the json schema
         $this->runCommand(
