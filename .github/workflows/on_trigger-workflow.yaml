@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "===== on_trigger-workflow.yaml ====="
           echo "------------ github context -----------" 
-          echo $GITHUB_CONTEXT"
+          echo "$GITHUB_CONTEXT"
       - name: Dump env context
         env:
           ENV_CONTEXT: ${{ toJson(env) }}
