@@ -1,6 +1,8 @@
 # syntax=docker.io/docker/dockerfile:1
-ARG PHRASEA_TAG=latest
 # FROM ghcr.io/alchemy-fr/fake-phrasea:${PHRASEA_TAG} AS phrasea
+ARG PHRASEA_REFNAME=master
+ARG PHRASEA_REFTYPE=branch
+ARG PHRASEA_DATETIME=20250101123456
 
 FROM php:8.3.11-cli-alpine3.20 AS importer
 
@@ -25,13 +27,13 @@ RUN tree /srv/app/downloads
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
-RUN ["php", "application.php", "build", "-vvv"]
-
-
-WORKDIR /srv/docusaurus/phrasea
-RUN ["pnpm", "run", "build" ]
-RUN tree build
-
-FROM nginx:1.29-alpine
-COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
+#RUN ["php", "application.php", "build", "-vvv"]
+#
+#
+#WORKDIR /srv/docusaurus/phrasea
+#RUN ["pnpm", "run", "build" ]
+#RUN tree build
+#
+#FROM nginx:1.29-alpine
+#COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 
