@@ -16,9 +16,9 @@ services:
         - PHRASEA_REF=${PHRASEA_REF}
     networks:
       - internal
-#    volumes:
-#        - ./importer/:/srv/app
-#        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+    volumes:
+        - ./importer/:/srv/app
+        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
     ports:
       - "8080:80"
     environment:
@@ -26,5 +26,3 @@ services:
       - PHRASEA_IMAGES=${PHRASEA_IMAGES}
       - PHRASEA_TAG=${PHRASEA_TAG}
       - PHRASEA_REF=${PHRASEA_REF}
-#      - NEXT_BRANCH=${NEXT_BRANCH}
-

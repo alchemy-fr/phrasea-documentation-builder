@@ -29,29 +29,27 @@ jobs:
     environment: sandbox-ci-documentation
 
     steps:
-      - name: Dump vars
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
-          echo "===== on_push.yaml ====="
-          # vars comes from https://github.com/alchemy-fr/phrasea-documentation-builder/settings/environments
-          echo "vars.NEXT_BRANCH = ${{ vars.NEXT_BRANCH }}"
-          echo "vars.PHRASEA_GITHUB = ${{ vars.PHRASEA_GITHUB }}"
-          echo "vars.PHRASEA_IMAGES = ${{ vars.PHRASEA_IMAGES }}"
-          
-          echo "vars.PHRASEA_TAG = ${{ vars.PHRASEA_TAG }}"
-          echo "vars.PHRASEA_REF = ${{ vars.PHRASEA_REF }}"
-          echo "env.PHRASEA_GITHUB = ${{ env.PHRASEA_GITHUB }}"
-          echo "env.PHRASEA_IMAGES = ${{ env.PHRASEA_IMAGES }}"
-          echo "env.PHRASEA_TAG = ${{ env.PHRASEA_TAG }}"
-          echo "env.PHRASEA_REF = ${{ env.PHRASEA_REF }}"
-          echo "github.ref = ${{ github.ref }}"
-          echo "github.sha = ${{ github.sha }}"
-          echo "github.ref_name = ${{ github.ref_name }}"
-          echo "github.repository = ${{ github.repository }}"
-          echo "github.event.release.tag_name = ${{ github.event.release.tag_name }}"
-          echo "github.event.client_payload.PHRASEA_TAG = ${{ github.event.client_payload.PHRASEA_TAG }}"
-          echo "github.event.client_payload.PHRASEA_REF = ${{ github.event.client_payload.PHRASEA_REF }}"
-          echo "env.REGISTRY = ${{ env.REGISTRY }}"
-          echo "env.IMAGE_REGISTRY = ${{ env.IMAGE_REGISTRY }}"
+          echo "===== on_trigger-workflow.yaml ====="
+          echo "------------ github context -----------" 
+          echo $GITHUB_CONTEXT"
+      - name: Dump env context
+        env:
+          ENV_CONTEXT: ${{ toJson(env) }}
+        run: |
+          echo "------------ env context -----------" 
+          echo "$ENV_CONTEXT"
+      - name: Dump vars
+        env:
+          VARS_CONTEXT: ${{ toJson(vars) }}
+        run: |
+          echo "------------ vars context -----------" 
+          echo "$VARS_CONTEXT"
+        
 
 #      - name: Checkout code
 #        uses: actions/checkout@v4
