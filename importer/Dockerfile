@@ -27,7 +27,10 @@ RUN tree /srv/app/downloads
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
-RUN ["php", "application.php", "build", "-vvv"]
+ENV PHRASEA_REFNAME=${PHRASEA_REFNAME}
+ENV PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
+ENV PHRASEA_DATETIME=${PHRASEA_DATETIME}
+RUN ["php", "application.php", "-vvv", "build"]
 #
 #
 #WORKDIR /srv/docusaurus/phrasea
