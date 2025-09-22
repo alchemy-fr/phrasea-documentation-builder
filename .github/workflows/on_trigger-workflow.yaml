@@ -113,7 +113,7 @@ jobs:
           provenance: false
           push: true
           tags: |
-            ${{ env.REGISTRY_NAMESPACE }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
+            ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
