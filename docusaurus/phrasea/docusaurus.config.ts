@@ -12,7 +12,7 @@ import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
-    tagline: "refname: " + version.refname + "  ;  type: " + versions.reftype + "  ;  datetime: " + version.datetime,
+    tagline: "refname: " + version.refname + "  ;  reftype: " + version.reftype + "  ;  datetime: " + version.datetime,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
    // onBrokenLinks: "throw",
@@ -24,7 +24,7 @@ const config: Config = {
 
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
-    organizationName: "alchemy-fr", // Usually your GitHub org/user name.
+    organizationName: "alchemy-fr", // Usually your GitHub org/username.
     projectName: "phrasea-documentation-builder", // Usually your repo name.
 
     i18n: {
