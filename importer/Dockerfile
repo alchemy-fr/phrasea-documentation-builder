@@ -36,6 +36,7 @@ RUN ["pnpm", "run", "build" ]
 RUN tree build
 
 FROM nginx:1.29-alpine
+ARG PHRASEA_REFTYPE
 COPY --from=importer /srv/docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
 COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 
