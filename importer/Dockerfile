@@ -6,6 +6,7 @@ ARG PHRASEA_REFNAME=master
 ARG PHRASEA_REFTYPE=branch
 ARG PHRASEA_DATETIME=20000101000000
 
+
 RUN apk add --no-interactive git bash nano nodejs npm \
     && npm install -g pnpm@^9.3.0
 
@@ -35,5 +36,6 @@ RUN ["pnpm", "run", "build" ]
 RUN tree build
 
 FROM nginx:1.29-alpine
+COPY --from=importer /srv/docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
 COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
 

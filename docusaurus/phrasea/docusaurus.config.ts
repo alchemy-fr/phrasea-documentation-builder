@@ -57,11 +57,7 @@ const config: Config = {
                     sidebarPath: require.resolve("./sidebars.ts"),
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
                     disableVersioning: false,
-                    // versions: {
-                    //     current: {
-                    //         label: `${getNextVersionName()} 🚧`,
-                    //     },
-                    // },
+                    includeCurrentVersion: false,   // do not include 'Next
                 },
                 blog: false,
                 theme: {
@@ -76,6 +72,7 @@ const config: Config = {
             docs: {
                 sidebar: {
                     hideable: true,
+                    autoCollapseCategories: false,
                 },
             },
             navbar: {
@@ -84,6 +81,7 @@ const config: Config = {
                     alt: "Phrasea Logo",
                     src: "img/phrasea.svg",
                 },
+                hideOnScroll: false,
                 items: [
                     {
                         type: "doc",

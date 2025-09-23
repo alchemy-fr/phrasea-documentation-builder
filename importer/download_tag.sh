@@ -15,7 +15,6 @@ git sparse-checkout set doc
 git checkout $1
 #echo "================ tmpclone ================ "
 #tree .
-
 cd ../../../
 mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/
 rm -rf ./importer/downloads/tmpclone
@@ -30,6 +29,5 @@ docker pull $PHRASEA_IMAGES:$1
 IMAGE_ID=$(docker create $PHRASEA_IMAGES:$1)
 docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./importer/downloads/$1/databox-api-php/ || echo "No doc/ folder found in image"
 docker rm -v $IMAGE_ID
-
 #echo "================ downloads $1 after image pull ================ "
 #tree ./importer/downloads/$1
