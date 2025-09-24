@@ -57,7 +57,8 @@ const config: Config = {
                     sidebarPath: require.resolve("./sidebars.ts"),
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
                     disableVersioning: false,
-                    includeCurrentVersion: false,   // do not include 'Next
+                    // DO NOT CHANGE THE FOLLOWING LINE, IT IS MANAGED BY THE build SCRIPT (set to false before build)
+                    includeCurrentVersion: true,
                 },
                 blog: false,
                 theme: {

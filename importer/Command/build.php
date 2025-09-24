@@ -73,7 +73,7 @@ class build extends Command
         }
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
-        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode(['0.0.0'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $n = count($versions);
         foreach ($versions as $tag => $semver) {
@@ -103,9 +103,13 @@ class build extends Command
             $n--;
         }
 
-        $v = json_decode(file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json'), true, 512, JSON_THROW_ON_ERROR);
-        $v = array_filter($v, fn($ver) => $ver !== '0.0.0');
-        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $config = file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts');
+        $config = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $config);
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $config);
+
+//        $v = json_decode(file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json'), true, 512, JSON_THROW_ON_ERROR);
+//        $v = array_filter($v, fn($ver) => $ver !== '0.0.0');
+//        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         return Command::SUCCESS;
     }
