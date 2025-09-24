@@ -6,10 +6,8 @@ ARG PHRASEA_REFNAME=master
 ARG PHRASEA_REFTYPE=branch
 ARG PHRASEA_DATETIME=20000101000000
 
-
 RUN apk add --no-interactive git bash nano nodejs npm \
     && npm install -g pnpm@^9.3.0
-
 
 COPY --from=composer:2.5.8 /usr/bin/composer /usr/bin/composer
 RUN composer config --global process-timeout 2000 \
@@ -17,23 +15,20 @@ RUN composer config --global process-timeout 2000 \
 
 USER app
 
-WORKDIR /srv/docusaurus/phrasea
-COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
-RUN pnpm install
-
 COPY --chown=app:app ./importer /srv/app
+COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
+COPY --chown=app:app ./docusaurus/nginx /srv/docusaurus/nginx
 
-RUN tree /srv/app/downloads
+WORKDIR /srv/docusaurus/phrasea
+RUN pnpm install
 
 WORKDIR /srv/app
 RUN composer install --no-dev --optimize-autoloader
 
 RUN ["php", "application.php", "-vvv", "build"]
 
-
 WORKDIR /srv/docusaurus/phrasea
 RUN ["pnpm", "run", "build" ]
-RUN tree build
 
 FROM nginx:1.29-alpine
 ARG PHRASEA_REFTYPE
