@@ -75,7 +75,7 @@ jobs:
             export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
             export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
             # Loop through releases
-            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".")  | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
+            echo "$response" | jq -c '[.[]] |  map({"tag": .tag_name | split(".") | {major: .[0], minor: .[1], patch: .[2], full: join(".")}, "all": .}) |group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch).all) | .[]' | while read -r release; do
               tag_name=$(echo "$release" | jq -r '.tag_name')
               # name=$(echo "$release" | jq -r '.name')
               # created_at=$(echo "$release" | jq -r '.created_at')
@@ -89,8 +89,8 @@ jobs:
             done
           fi
 
-          # also get next branch (master) for latest changes
-          ./importer/download_tag.sh ${{vars.NEXT_BRANCH}}
+          # also get next branch (master) for latest changes (not listed in docusaurus)
+          # ./importer/download_tag.sh ${{vars.NEXT_BRANCH}}
 
           tree ./importer/downloads/
 

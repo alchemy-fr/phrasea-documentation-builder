@@ -65,21 +65,21 @@ class build extends Command
             }
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
-        // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
-        if(array_key_exists('master', $versions)) {
-            $master = $versions['master'];
-            unset($versions['master']);
-            $versions['master'] = $master;
-        }
+//        // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
+//        if(array_key_exists('master', $versions)) {
+//            $master = $versions['master'];
+//            unset($versions['master']);
+//            $versions['master'] = $master;
+//        }
+
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
-        $n = count($versions);
         foreach ($versions as $tag => $semver) {
 
-            $this->filesystem->mirror(self::DOWNLOAD_DIR . '/' . $tag . '/doc/', self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/');
-
+            $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/doc');
+            $this->filesystem->remove(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged');
             // list specific applications (directories at /, except /doc which is the "general" documentation)
             $apps = [];
             $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag, \FilesystemIterator::SKIP_DOTS);
@@ -88,45 +88,53 @@ class build extends Command
                     continue;
                 }
                 $apps[] = $appDir->getFilename();
+                $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/' . $appDir->getFilename());
             }
 
-            $this->fusionAppsToGeneral($tag, $apps);
-            $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
+            $this->filesystem->mirror(
+                self::DOWNLOAD_DIR . '/' . $tag . '/doc/',
+                self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/doc/'
+            );
 
-            if ($n > 1) {
-                // version
-                $this->runCommand(
-                    ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
-                    self::DOCUSAURUS_PROJECT_DIR
+            foreach ($apps as $app) {
+                $this->output->writeln(sprintf("Merging app %s to %s",
+                    $app,
+                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/' . $app . '/doc')
+                ));
+                $this->filesystem->mirror(
+                    self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc',
+                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/' . $app . '/doc'
                 );
             }
-            $n--;
+
+            $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
+
+            // version
+            $this->runCommand(
+                ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
+                self::DOCUSAURUS_PROJECT_DIR
+            );
+
         }
 
-        $config = file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts');
-        $config = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $config);
-        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $config);
+        $orgConfig = file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts');
+        $patchedConfig = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $orgConfig);
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $patchedConfig);
 
-//        $v = json_decode(file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json'), true, 512, JSON_THROW_ON_ERROR);
-//        $v = array_filter($v, fn($ver) => $ver !== '0.0.0');
-//        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/versions.json', json_encode($v, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $process = $this->runCommand(
+            ['pnpm', 'run', 'build'],
+            self::DOCUSAURUS_PROJECT_DIR,
+            3600
+        );
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/build/build.log', $process->getOutput());
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/build/build-error.log', $process->getErrorOutput());
+
+        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $orgConfig);
 
         return Command::SUCCESS;
     }
 
-    private function fusionAppsToGeneral(string $tag, array $apps): void
-    {
-        foreach ($apps as $app) {
-            $this->output->writeln("Merging app $app into general doc for tag $tag");
-
-            $src = self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc';
-            $dst = self::DOWNLOAD_DIR . '/' . $tag . '/docmerged';
-
-            $this->filesystem->mirror($src, $dst);
-        }
-    }
-
-    private function runCommand(array $command, string $workingDir, int $timeout=60): void
+    private function runCommand(array $command, string $workingDir, int $timeout=60): Process
     {
         $m = join(' ', array_map(
             fn($m) => escapeshellcmd($m) === $m ? $m : escapeshellarg($m),
@@ -140,31 +148,34 @@ class build extends Command
                 fn($m) => getenv($m[1]), $c);
         }, $command);
 
-
         $process = new Process($command, $workingDir);
         $process->setTimeout($timeout);
         $process->setIdleTimeout($timeout);
 
         $process->run(function ($type, $buffer): void {
-//            $this->output->write($buffer);
+            $this->output->write('.');
         });
+        $this->output->writeln('');
 
         if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
         }
+
+        return $process;
     }
 
     private function compileFiles(string $unzipDir, string $version): void
     {
-        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/phrasea');
-        $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/databox-api');
-
         // ---- dispatch the files in the documentation directory
         $translations = [];
         $scan = function($subdir, $depth=0) use (&$scan, $unzipDir, &$translations) {
             $tab = str_repeat('  ', $depth);
             $scandir =  $unzipDir . $subdir;
-            $this->output->writeln(sprintf("%sScanning %s", $tab, $scandir));
+
+            $this->output->writeln(sprintf("%sScanning .%s",
+                $tab,
+                $subdir
+            ));
 
             /** @var SplFileInfo $file */
             foreach (new \FilesystemIterator($scandir, \FilesystemIterator::SKIP_DOTS) as $file) {
@@ -189,12 +200,18 @@ class build extends Command
                     }
 
                     if($locale === '_') {
-                        $targetDir = self::DOCUSAURUS_PROJECT_DIR . '/docs/phrasea'. $subdir;
+                        $subTargetDir = 'docs'. $subdir;
                     }
                     else {
-                        $targetDir = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current/phrasea'. $subdir;
+                        $subTargetDir = 'i18n/' . $locale . '/docusaurus-plugin-content-docs/current'. $subdir;
                     }
-                    $this->output->writeln(sprintf("%s  copy %s to %s:%s", $tab, $file->getPathname(), $targetDir, $bn . $dotExtension));
+                    $this->output->writeln(sprintf("%s  copy %s to %s/%s",
+                        $tab,
+                        $file->getFilename(),
+                        $subTargetDir,
+                        $bn . $dotExtension
+                    ));
+                    $targetDir = self::DOCUSAURUS_PROJECT_DIR . '/' . $subTargetDir;
                     $this->filesystem->mkdir($targetDir, 0777);
                     $this->filesystem->copy($file->getPathname(), $targetDir . '/' . $bn . $dotExtension, true);
 
@@ -204,10 +221,12 @@ class build extends Command
                             if(!isset($translations[$locale])) {
                                 $translations[$locale] = [];
                             }
-                            $translations[$locale]['sidebar.tutorialSidebar.category.'.$file->getFilename()] = [
+                            $t = [
                                 'message' => $translation,
-                                'description' => 'Sidebar title for ' . $file->getPathname(),
+                                'description' => 'Sidebar title for directory ' . $file->getPathname(),
                             ];
+                            $translations[$locale]['sidebar.techdocSidebar.category.'.$file->getFilename()] = $t;
+                            $translations[$locale]['sidebar.userdocSidebar.category.'.$file->getFilename()] = $t;
                         }
                     }
 
@@ -216,6 +235,7 @@ class build extends Command
             }
         };
 
+        $this->output->writeln(sprintf("Compiling %s to %s", realpath($unzipDir), realpath(self::DOCUSAURUS_PROJECT_DIR)));
         $scan('');
 
         // $this->filesystem->remove($unzipDir);
@@ -227,13 +247,13 @@ class build extends Command
             'reftype' => getenv('PHRASEA_REFTYPE'),
             'datetime' => getenv('PHRASEA_DATETIME'),
         ];
-        $this->output->writeln("Writing version to: " . $target);
+        $this->output->writeln("Writing version to: " . realpath($target));
         file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         // dump translations to json files
         foreach ($translations as $locale => $translation) {
             $target = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
-            $this->output->writeln("Writing translations to: " . $target);
+            $this->output->writeln("Writing translations to: " . realpath($target));
             if(!file_exists(dirname($target))) {
                 mkdir(dirname($target), 0777, true);
             }

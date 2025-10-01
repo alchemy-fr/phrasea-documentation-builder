@@ -19,19 +19,19 @@ COPY --chown=app:app ./importer /srv/app
 COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 COPY --chown=app:app ./docusaurus/nginx /srv/docusaurus/nginx
 
-WORKDIR /srv/docusaurus/phrasea
-RUN pnpm install
-
-WORKDIR /srv/app
-RUN composer install --no-dev --optimize-autoloader
-
-RUN ["php", "application.php", "-vvv", "build"]
-
-WORKDIR /srv/docusaurus/phrasea
-RUN ["pnpm", "run", "build" ]
-
-FROM nginx:1.29-alpine
-ARG PHRASEA_REFTYPE
-COPY --from=importer /srv/docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
-COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
-
+#WORKDIR /srv/docusaurus/phrasea
+#RUN pnpm install
+#
+#WORKDIR /srv/app
+#RUN composer install --no-dev --optimize-autoloader
+#
+#RUN ["php", "application.php", "-vvv", "build"]
+#
+#WORKDIR /srv/docusaurus/phrasea
+#RUN ["pnpm", "run", "build" ]
+#
+#FROM nginx:1.29-alpine
+#ARG PHRASEA_REFTYPE
+#COPY --from=importer /srv/docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
+#COPY --from=importer /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
+#

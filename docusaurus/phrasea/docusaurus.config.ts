@@ -15,17 +15,15 @@ const config: Config = {
     tagline: "refname: " + version.refname + "  ;  reftype: " + version.reftype + "  ;  datetime: " + version.datetime,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
-   // onBrokenLinks: "throw",
-    onBrokenLinks: "ignore",
-    onBrokenAnchors: "ignore",
-    // onBrokenMarkdownLinks: "warn",
-    onBrokenMarkdownLinks: "ignore",
+    onBrokenLinks: "warn",
+    onBrokenAnchors: "warn",
+    onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
 
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
-    organizationName: "alchemy-fr", // Usually your GitHub org/username.
-    projectName: "phrasea-documentation-builder", // Usually your repo name.
+    // organizationName: "alchemy-fr", // Usually your GitHub org/username.
+    // projectName: "phrasea-documentation-builder", // Usually your repo name.
 
     i18n: {
         defaultLocale: 'en',
@@ -84,16 +82,23 @@ const config: Config = {
                 },
                 hideOnScroll: false,
                 items: [
+                    // {
+                    //     type: "doc",
+                    //     docId: "intro",
+                    //     position: "left",
+                    //     label: "Tutorial",
+                    // },
                     {
-                        type: "doc",
-                        docId: "intro",
+                        type: "docSidebar",
+                        sidebarId: "userdocSidebar",
                         position: "left",
-                        label: "Tutorial",
+                        label: "User",
                     },
                     {
-                        label: "Databox API",
+                        type: "docSidebar",
+                        sidebarId: "techdocSidebar",
                         position: "left",
-                        to: "/docs/category/databox-api",
+                        label: "Tech",
                     },
                     {
                         type: "docsVersionDropdown",
@@ -119,6 +124,15 @@ const config: Config = {
                     //         },
                     //     ],
                     // },
+                    {
+                        label: 'phrasea',
+                        href: 'https://www.phrasea.com',
+                    },
+                    {
+                        label: 'github',
+                        href: 'https://github.com/alchemy-fr/phrasea',
+                    },
+
                 ],
                 copyright: `Copyright © ${new Date().getFullYear()} Alchemy, Inc. Built with Docusaurus.`,
             },
@@ -168,9 +182,8 @@ const config: Config = {
                 docsPluginId: "classic",
                 config: {
                     databox: {
-                        specPath: "databox_api_schema.json",
+                        specPath: "docs/databox-api-php/doc/Api/schema.json",
                         outputDir: "docs/databox_api",
-                        // downloadUrl: "https://raw.githubusercontent.com/PaloAltoNetworks/docusaurus-template-openapi-docs/main/examples/petstore.yaml",
                         sidebarOptions: {
                             groupPathsBy: "tag",
                             categoryLinkSource: "tag",
@@ -182,7 +195,9 @@ const config: Config = {
         [
             require.resolve('docusaurus-lunr-search'),
             {
-                languages: ['en', 'fr']
+                languages: ['en', 'fr'],
+                disableVersioning: false,
+                highlightResult: true,
             }
         ]
     ],
