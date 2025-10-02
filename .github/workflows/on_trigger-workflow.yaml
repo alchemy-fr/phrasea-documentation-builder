@@ -56,8 +56,6 @@ jobs:
           export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
           export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
           ./importer/download_tag.sh "${{env.PHRASEA_REFNAME}}"
-          
-          echo "image_tags=${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}" >> "$GITHUB_ENV"
 
       ### if workflow runs because a release, prepare all x.y.z versions of documentation
 
@@ -85,8 +83,6 @@ jobs:
             done
           fi
 
-          echo "image_tags=${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}},${{ env.IMAGE_REGISTRY }}/phrasea-documentation:latest" >> "$GITHUB_ENV"
-
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
 
@@ -97,15 +93,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push image
+      - name: Build and Push image of single version
+        if: ${{env.PHRASEA_REFTYPE == 'branch'}}
         uses: docker/build-push-action@v6
         with:
           context: ./
           file: ./importer/Dockerfile
           provenance: false
           push: true
-          tags: "$image_tags"
+          tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+
+      - name: Build and Push image of all versions
+        if: ${{env.PHRASEA_REFTYPE == 'tag'}}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./importer/Dockerfile
+          provenance: false
+          push: true
+          tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}},${{ env.IMAGE_REGISTRY }}/phrasea-documentation:latest
+          build-args: |
+            PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
+            PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
+            PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+            
