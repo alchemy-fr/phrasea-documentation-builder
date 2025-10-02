@@ -56,8 +56,8 @@ jobs:
           export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
           export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
           ./importer/download_tag.sh "${{env.PHRASEA_REFNAME}}"
-
-          tree ./importer/downloads/  
+          
+          echo "image_tags=${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}" >> "$GITHUB_ENV"
 
       ### if workflow runs because a release, prepare all x.y.z versions of documentation
 
@@ -86,8 +86,8 @@ jobs:
 
           # also get next branch (master) for latest changes (not listed in docusaurus)
           # ./importer/download_tag.sh ${{vars.NEXT_BRANCH}}
-
-          tree ./importer/downloads/
+          
+          echo "image_tags=${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}},${{ env.IMAGE_REGISTRY }}/phrasea-documentation:latest" >> "$GITHUB_ENV"
 
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
@@ -106,8 +106,7 @@ jobs:
           file: ./importer/Dockerfile
           provenance: false
           push: true
-          tags: |
-            ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
+          tags: $image_tags
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
