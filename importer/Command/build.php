@@ -126,8 +126,14 @@ class build extends Command
             self::DOCUSAURUS_PROJECT_DIR,
             3600
         );
-        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/build/build.log', $process->getOutput());
-        file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/build/build-error.log', $process->getErrorOutput());
+        file_put_contents(
+            self::DOCUSAURUS_PROJECT_DIR . '/build/build.html',
+            '<html><pre>'.$process->getOutput().'</pre></html>'
+        );
+        file_put_contents(
+            self::DOCUSAURUS_PROJECT_DIR . '/build/build-error.html',
+            '<html><pre>'.$process->getErrorOutput().'</pre></html>'
+        );
 
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $orgConfig);
 

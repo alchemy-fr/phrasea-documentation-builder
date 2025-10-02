@@ -75,6 +75,7 @@ jobs:
             export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
             export PHRASEA_IMAGES=${{vars.PHRASEA_IMAGES}}
             echo "$response" | jq -c '[.[]] | map({"tag": .tag_name | split(".") | {major: .[0]|gsub("[^0-9]"; "0")|tonumber, minor: .[1]|gsub("[^0-9]"; "0")|tonumber, patch: .[2]|gsub("[^0-9]"; "0")|tonumber, full: join(".")}, "all": .}) | map({"tag":(.tag + {"v":(.tag.major*10000 + .tag.minor*100 + .tag.patch)}), "all": .all }) | group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch)) | map(select(.tag.v >= ${{vars.MIN_VERSION}}))' > releases.json
+            docker cp releases.json ./importer/downloads
             # Loop through releases
             cat releases.json | jq -r '.[] | .all.tag_name' | while read -r tag_name; do
 
