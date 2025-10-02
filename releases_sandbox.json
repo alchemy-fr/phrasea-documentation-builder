@@ -203,7 +203,7 @@
       "site_admin": false
     },
     "node_id": "RE_kwDOPRfBBs4O-wc2",
-    "tag_name": "2.0.0",
+    "tag_name": "v2.0.0-beta",
     "target_commitish": "master",
     "name": "title of 2.0.0",
     "draft": false,
