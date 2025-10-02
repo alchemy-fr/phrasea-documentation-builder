@@ -104,7 +104,7 @@ jobs:
           file: ./importer/Dockerfile
           provenance: false
           push: true
-          tags: $image_tags
+          tags: ${{image_tags}}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
