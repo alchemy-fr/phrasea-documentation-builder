@@ -10,10 +10,16 @@ mkdir -p ./importer/downloads/$1
 #     so we clone in a tmp folder and then move the doc/ folder
 
 git clone --depth 1 --filter=blob:none --sparse https://github.com/$PHRASEA_GITHUB.git ./importer/downloads/tmpclone/
+echo "================ cloned ================ "
 cd ./importer/downloads/tmpclone
 git sparse-checkout set doc
+echo "================ checking $1 ================ "
 git checkout $1
-#echo "================ tmpclone ================ "
+echo "================ checked ================ "
+
+echo "================ wip.md ================ "
+cat ./importer/downloads/tmpclone/doc/user/wip.md
+echo "=========================================="
 #tree .
 cd ../../../
 mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/

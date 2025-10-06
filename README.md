@@ -14,5 +14,6 @@ variables are defined by https://github.com/alchemy-fr/phrasea-documentation-bui
 
 - `PHRASEA_GITHUB` github repository
 - `PHRASEA_IMAGES` images repository
-- `NEXT_BRANCH` name of the "current" branch that will be named "Next" on documentation
+- `MIN_VERSION` The minimum phrasea version to include; 
+As **number** with each segment 0...99, like: v3.12.5 ==> 31205 
 
