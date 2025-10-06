@@ -19,7 +19,7 @@ git checkout $1
 echo "================ checked ================ "
 
 echo "================ wip.md ================ "
-cat ./tmpclone/doc/user/wip.md
+cat ./doc/user/wip.md
 echo "=========================================="
 #tree .
 cd ../../../
