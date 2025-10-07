@@ -20,33 +20,10 @@ jobs:
     environment: sandbox-ci-documentation
 
     steps:
-
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          echo "===== on_trigger-workflow.yaml ====="
-          echo "------------ github context -----------" 
-          echo "$GITHUB_CONTEXT"
-      - name: Dump env context
-        env:
-          ENV_CONTEXT: ${{ toJson(env) }}
-        run: |
-          echo "------------ env context -----------" 
-          echo "$ENV_CONTEXT"
-      - name: Dump vars
-        env:
-          VARS_CONTEXT: ${{ toJson(vars) }}
-        run: |
-          echo "------------ vars context -----------" 
-          echo "$VARS_CONTEXT"
-        
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 30
-
 
       ### if workflow runs because a push of phrasea, prepare a single version of documentation
 

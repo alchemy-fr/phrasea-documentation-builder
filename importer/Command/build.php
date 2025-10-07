@@ -65,12 +65,6 @@ class build extends Command
             }
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
-//        // move master to the end, so it will end-up as "current" (named "Next" in docusaurus)
-//        if(array_key_exists('master', $versions)) {
-//            $master = $versions['master'];
-//            unset($versions['master']);
-//            $versions['master'] = $master;
-//        }
 
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_docs');
         $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/versioned_sidebars');
@@ -114,13 +108,13 @@ class build extends Command
                 ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
                 self::DOCUSAURUS_PROJECT_DIR
             );
-
         }
 
         $orgConfig = file_get_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts');
         $patchedConfig = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $orgConfig);
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $patchedConfig);
 
+        $this->filesystem->mkdir(self::DOCUSAURUS_PROJECT_DIR . '/build');
         $process = $this->runCommand(
             ['pnpm', 'run', 'build'],
             self::DOCUSAURUS_PROJECT_DIR,
@@ -133,6 +127,15 @@ class build extends Command
         file_put_contents(
             self::DOCUSAURUS_PROJECT_DIR . '/build/build-error.html',
             '<html><pre>'.$process->getErrorOutput().'</pre></html>'
+        );
+        file_put_contents(
+            self::DOCUSAURUS_PROJECT_DIR . '/build/version.html',
+            sprintf(
+                "<html><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>",
+                getenv('PHRASEA_REFNAME'),
+                getenv('PHRASEA_REFTYPE'),
+                getenv('PHRASEA_DATETIME')
+            )
         );
 
         file_put_contents(self::DOCUSAURUS_PROJECT_DIR . '/docusaurus.config.ts', $orgConfig);
@@ -261,7 +264,7 @@ class build extends Command
             $target = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
             $this->output->writeln("Writing translations to: " . realpath($target));
             if(!file_exists(dirname($target))) {
-                mkdir(dirname($target), 0777, true);
+                $this->filesystem->mkdir(dirname($target));
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }

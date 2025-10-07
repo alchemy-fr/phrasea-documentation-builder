@@ -12,7 +12,8 @@ import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
-    tagline: "refname: " + version.refname + "  ;  reftype: " + version.reftype + "  ;  datetime: " + version.datetime,
+    // tagline: "refname: " + version.refname + "  ;  reftype: " + version.reftype + "  ;  datetime: " + version.datetime,
+    tagline: undefined,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
     onBrokenLinks: "warn",
