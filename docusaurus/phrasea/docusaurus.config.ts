@@ -26,6 +26,10 @@ const config: Config = {
     // organizationName: "alchemy-fr", // Usually your GitHub org/username.
     // projectName: "phrasea-documentation-builder", // Usually your repo name.
 
+    future: {
+        v4: true,
+        experimental_faster: true,
+    },
     i18n: {
         defaultLocale: 'en',
         locales: ['en', 'fr'],
@@ -53,6 +57,7 @@ const config: Config = {
             "classic",
             {
                 docs: {
+                    routeBasePath: '/', // Serve the docs at the site's root
                     sidebarPath: require.resolve("./sidebars.ts"),
                     docItemComponent: "@theme/ApiItem", // Derived from docusaurus-theme-openapi
                     disableVersioning: false,
@@ -183,7 +188,7 @@ const config: Config = {
                 docsPluginId: "classic",
                 config: {
                     databox: {
-                        specPath: "docs/databox-api-php/doc/Api/schema.json",
+                        specPath: "docs/_databox-api-php/doc/Api/schema.json",
                         outputDir: "docs/databox_api",
                         sidebarOptions: {
                             groupPathsBy: "tag",

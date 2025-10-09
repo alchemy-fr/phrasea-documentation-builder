@@ -87,21 +87,22 @@ class build extends Command
 
             $this->filesystem->mirror(
                 self::DOWNLOAD_DIR . '/' . $tag . '/doc/',
-                self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/doc/'
+                self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/'
             );
 
             foreach ($apps as $app) {
                 $this->output->writeln(sprintf("Merging app %s to %s",
                     $app,
-                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/' . $app . '/doc')
+                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc')
                 ));
                 $this->filesystem->mirror(
                     self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc',
-                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/' . $app . '/doc'
+                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc'
                 );
             }
 
             $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
+    //        $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag, $tag);
 
             // version
             $this->runCommand(
@@ -273,6 +274,23 @@ class build extends Command
         $this->runCommand(
             ['pnpm', 'run', 'gen-api-docs', 'databox'],
             self::DOCUSAURUS_PROJECT_DIR
+        );
+
+        // ========== fix for api auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
+        //            we add a "key" to each item
+        $this->output->writeln("Patching sidebar.ts to add keys.");
+        $this->filesystem->copy(
+            self::DOCUSAURUS_PROJECT_DIR . '/docs/databox_api/sidebar.ts',
+            self::DOCUSAURUS_PROJECT_DIR . '/docs/databox_api/sidebar-bkp.ts',
+            true
+        );
+        $this->filesystem->dumpFile(
+            self::DOCUSAURUS_PROJECT_DIR . '/docs/databox_api/sidebar.ts',
+            preg_replace(
+                "/(( *)id: (.*),)/m",
+                "$1\n$2key: $3,",
+                $this->filesystem->readFile(self::DOCUSAURUS_PROJECT_DIR . '/docs/databox_api/sidebar.ts')
+            )
         );
     }
 }
