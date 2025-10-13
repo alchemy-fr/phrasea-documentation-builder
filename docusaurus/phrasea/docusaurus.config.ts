@@ -198,14 +198,24 @@ const config: Config = {
                 } satisfies Plugin.PluginOptions,
             }
         ],
+        // [
+        //     require.resolve('docusaurus-lunr-search'),
+        //     {
+        //         languages: ['en', 'fr'],
+        //         disableVersioning: false,
+        //         highlightResult: true,
+        //     }
+        // ],
         [
-            require.resolve('docusaurus-lunr-search'),
+            require.resolve("@cmfcmf/docusaurus-search-local"),
             {
-                languages: ['en', 'fr'],
-                disableVersioning: false,
-                highlightResult: true,
-            }
-        ]
+                language: ['en', 'fr'],
+                indexDocs: true,
+                indexBlog: false,
+                indexPages: false
+            },
+        ],
+
     ],
 
     themes: ["docusaurus-theme-openapi-docs"],
