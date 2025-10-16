@@ -91,18 +91,21 @@ class build extends Command
             );
 
             foreach ($apps as $app) {
-                $this->output->writeln(sprintf("Merging app %s to %s",
-                    $app,
-                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc')
-                ));
                 $this->filesystem->mirror(
                     self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc',
                     self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc'
                 );
+                $this->output->writeln(sprintf('Merged app "%s" to %s',
+                    $app,
+                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc')
+                ));
             }
 
             $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
-    //        $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag, $tag);
+            $this->runCommand(
+                ['tree', self::DOCUSAURUS_PROJECT_DIR],
+                self::DOCUSAURUS_PROJECT_DIR
+            );
 
             // version
             $this->runCommand(
@@ -257,17 +260,17 @@ class build extends Command
             'reftype' => getenv('PHRASEA_REFTYPE'),
             'datetime' => getenv('PHRASEA_DATETIME'),
         ];
-        $this->output->writeln("Writing version to: " . realpath($target));
         file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $this->output->writeln("Wrote version to: " . realpath($target));
 
         // dump translations to json files
         foreach ($translations as $locale => $translation) {
             $target = self::DOCUSAURUS_PROJECT_DIR . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
-            $this->output->writeln("Writing translations to: " . realpath($target));
             if(!file_exists(dirname($target))) {
                 $this->filesystem->mkdir(dirname($target));
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $this->output->writeln("Wrote translations to: " . realpath($target));
         }
 
         // create the api documentation from the json schema

@@ -18,7 +18,7 @@ const config: Config = {
     baseUrl: "/",
     onBrokenLinks: "warn",
     onBrokenAnchors: "warn",
-    onBrokenMarkdownLinks: "warn",
+    // onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
 
     // GitHub pages deployment config.
@@ -30,6 +30,13 @@ const config: Config = {
         v4: true,
         experimental_faster: true,
     },
+    markdown: {
+        hooks: {
+            onBrokenMarkdownLinks: "warn",
+            onBrokenMarkdownImages: "warn",
+        },
+    },
+
     i18n: {
         defaultLocale: 'en',
         locales: ['en', 'fr'],
@@ -188,7 +195,7 @@ const config: Config = {
                 docsPluginId: "classic",
                 config: {
                     databox: {
-                        specPath: "docs/_databox-api-php/doc/Api/schema.json",
+                        specPath: "docs/_databox-api-php/doc/_schema.json",
                         outputDir: "docs/databox_api",
                         sidebarOptions: {
                             groupPathsBy: "tag",
