@@ -12,13 +12,12 @@ import versions from './versions.json';
 
 const config: Config = {
     title: "Phrasea documentation",
-    // tagline: "refname: " + version.refname + "  ;  reftype: " + version.reftype + "  ;  datetime: " + version.datetime,
     tagline: undefined,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
-    onBrokenLinks: "warn",
-    onBrokenAnchors: "warn",
-    // onBrokenMarkdownLinks: "warn",
+    onBrokenLinks: "throw",
+    onBrokenAnchors: "throw",
+
     favicon: "img/favicon.ico",
 
     // GitHub pages deployment config.
@@ -32,8 +31,8 @@ const config: Config = {
     },
     markdown: {
         hooks: {
-            onBrokenMarkdownLinks: "warn",
-            onBrokenMarkdownImages: "warn",
+            onBrokenMarkdownLinks: "throw",
+            onBrokenMarkdownImages: "throw",
         },
     },
 
@@ -95,12 +94,6 @@ const config: Config = {
                 },
                 hideOnScroll: false,
                 items: [
-                    // {
-                    //     type: "doc",
-                    //     docId: "intro",
-                    //     position: "left",
-                    //     label: "Tutorial",
-                    // },
                     {
                         type: "docSidebar",
                         sidebarId: "userdocSidebar",
@@ -128,15 +121,6 @@ const config: Config = {
             footer: {
                 style: "dark",
                 links: [
-                    // {
-                    //     title: "Docs",
-                    //     items: [
-                    //         {
-                    //             label: "Tutorial",
-                    //             to: "/docs/intro",
-                    //         },
-                    //     ],
-                    // },
                     {
                         label: 'phrasea',
                         href: 'https://www.phrasea.com',
@@ -205,14 +189,6 @@ const config: Config = {
                 } satisfies Plugin.PluginOptions,
             }
         ],
-        // [
-        //     require.resolve('docusaurus-lunr-search'),
-        //     {
-        //         languages: ['en', 'fr'],
-        //         disableVersioning: false,
-        //         highlightResult: true,
-        //     }
-        // ],
         [
             require.resolve("@cmfcmf/docusaurus-search-local"),
             {

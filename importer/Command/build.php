@@ -40,7 +40,7 @@ class build extends Command
 
         $this->filesystem = new Filesystem();
 
-        $output->writeln('------------------- running php -------');
+        $output->writeln('-------- running php build -------');
         foreach(['PHRASEA_REFNAME', 'PHRASEA_REFTYPE', 'PHRASEA_DATETIME'] as $env) {
             $output->writeln($env . '=' . getenv($env));
         }
@@ -102,10 +102,6 @@ class build extends Command
             }
 
             $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
-            $this->runCommand(
-                ['tree', self::DOCUSAURUS_PROJECT_DIR],
-                self::DOCUSAURUS_PROJECT_DIR
-            );
 
             // version
             $this->runCommand(
