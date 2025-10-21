@@ -76,13 +76,12 @@ class build extends Command
             $this->filesystem->remove(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged');
             // list specific applications (directories at /, except /doc which is the "general" documentation)
             $apps = [];
-            $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag, \FilesystemIterator::SKIP_DOTS);
+            $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag . '/generated', \FilesystemIterator::SKIP_DOTS);
             foreach ($di2 as $appDir) {
-                if (!$appDir->isDir() || $appDir->getFilename() === 'doc' || $appDir->getFilename() === 'docmerged') {
-                    continue;
+                if ($appDir->isDir()) {
+                    $apps[] = $appDir->getFilename();
+                    $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/' . $appDir->getFilename());
                 }
-                $apps[] = $appDir->getFilename();
-                $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/' . $appDir->getFilename());
             }
 
             $this->filesystem->mirror(
@@ -92,12 +91,12 @@ class build extends Command
 
             foreach ($apps as $app) {
                 $this->filesystem->mirror(
-                    self::DOWNLOAD_DIR . '/' . $tag . '/' . $app . '/doc',
-                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc'
+                    self::DOWNLOAD_DIR . '/' . $tag . '/generated/' . $app ,
+                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app
                 );
                 $this->output->writeln(sprintf('Merged app "%s" to %s',
                     $app,
-                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app . '/doc')
+                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app)
                 ));
             }
 

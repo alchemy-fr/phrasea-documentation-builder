@@ -1,27 +1,27 @@
 #!/bin/bash
-echo PHRASEA_GITHUB=$PHRASEA_GITHUB
-echo PHRASEA_IMAGES=$PHRASEA_IMAGES
-echo TAG=$1
+TAG=$1
 
-mkdir -p ./importer/downloads/$1
+echo TAG: $1
+
+mkdir -p ./importer/downloads/$TAG
 
 # copy the base doc from the GitHub repository
 # nb: sparse checkout is experimental
 #     we clone in a tmp folder and then move the doc/ folder
 
-git clone --filter=blob:none --no-checkout https://github.com/$PHRASEA_GITHUB.git ./importer/downloads/tmpclone/
+git clone --filter=blob:none --no-checkout https://github.com/alchemy-fr/phrasea.git ./importer/downloads/tmpclone/
 cd ./importer/downloads/tmpclone
 git fetch origin
 git sparse-checkout set doc
-git checkout $1
+git checkout $TAG
 cd ../../../
-mv ./importer/downloads/tmpclone/doc ./importer/downloads/$1/
+mv ./importer/downloads/tmpclone/doc ./importer/downloads/$TAG/
 rm -rf ./importer/downloads/tmpclone
 
 # copy the databox-api-php doc from the docker image
 
-mkdir -p ./importer/downloads/$1/databox-api-php
-docker pull $PHRASEA_IMAGES:$1
-IMAGE_ID=$(docker create $PHRASEA_IMAGES:$1)
-docker cp $IMAGE_ID:/srv/app/databox/api/doc/ ./importer/downloads/$1/databox-api-php/ || echo "No doc/ folder found in image"
+mkdir -p ./importer/downloads/$TAG/databox
+docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG
+IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG)
+docker cp $IMAGE_ID:/srv/doc ./importer/downloads/$TAG/generated/databox || echo "No /srv/doc folder found in image"
 docker rm -v $IMAGE_ID

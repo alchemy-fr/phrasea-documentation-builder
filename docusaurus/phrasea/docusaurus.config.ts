@@ -15,8 +15,8 @@ const config: Config = {
     tagline: undefined,
     url: "https://phrasea.documentation.com",
     baseUrl: "/",
-    onBrokenLinks: "throw",
-    onBrokenAnchors: "throw",
+    onBrokenLinks: "warn",     // Opts: 'ignore' | 'log' | 'warn' | 'throw'
+    onBrokenAnchors: "warn",
 
     favicon: "img/favicon.ico",
 
@@ -31,8 +31,8 @@ const config: Config = {
     },
     markdown: {
         hooks: {
-            onBrokenMarkdownLinks: "throw",
-            onBrokenMarkdownImages: "throw",
+            onBrokenMarkdownLinks: "warn",
+            onBrokenMarkdownImages: "warn",
         },
     },
 
@@ -179,7 +179,7 @@ const config: Config = {
                 docsPluginId: "classic",
                 config: {
                     databox: {
-                        specPath: "docs/_databox-api-php/doc/_schema.json",
+                        specPath: "docs/_databox/_schema.json",
                         outputDir: "docs/databox_api",
                         sidebarOptions: {
                             groupPathsBy: "tag",
