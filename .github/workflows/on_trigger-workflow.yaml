@@ -6,7 +6,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-fake-databox-api-php
+  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
   # sent by workflow_dispatch from phrasea:on-push
@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: sandbox-ci-documentation
+    environment: phrasea
 
     steps:
       - name: Checkout code
@@ -42,10 +42,8 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           MIN_VERSION=$(echo '"'${{vars.MIN_VERSION}}'"' | jq '. | split(".") | map(. | tonumber) | .[0]*1000000 + .[1]*1000 + .[2]')
           # Fetch releases
-          # -------- to not explode api limits, use a static file for tests -----------
           response=$(curl -s "https://api.github.com/repos/${{vars.PHRASEA_GITHUB}}/releases")
-          # response=$(cat ./releases_sandbox.json)
-          # ---------------------------------------------------------------------------
+
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             export PHRASEA_GITHUB=${{vars.PHRASEA_GITHUB}}
