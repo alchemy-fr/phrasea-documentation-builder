@@ -56,6 +56,10 @@ jobs:
             done
           fi
 
+      - name: Dump downloads
+        run: |
+          tree ./importer/downloads    
+
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
 
