@@ -40,7 +40,7 @@ jobs:
           echo "Fetching tags from github:phrasea releases"
           MIN_VERSION=$(echo '"'${{vars.MIN_VERSION}}'"' | jq '. | split(".") | map(. | tonumber) | .[0]*1000000 + .[1]*1000 + .[2]')
           # Fetch releases
-          response=$(curl -s "https://api.github.com/repos/${{vars.PHRASEA_GITHUB}}/releases")
+          response=$(curl -s "https://api.github.com/repos/alchemy-fr/phrasea/releases")
 
           # Check if the response is valid
           if [ $? -eq 0 ]; then
