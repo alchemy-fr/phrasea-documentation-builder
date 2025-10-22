@@ -17,6 +17,25 @@ Variables are defined by https://github.com/alchemy-fr/phrasea-documentation-bui
 - `MIN_VERSION` The minimum phrasea version to include, e.g. 3.12.5
 - `VERSIONS_COUNT` The maximum number of versions to include on "releases" documentation.
 
+e.g. `MIN_VERSION=1.1.2` ; `VERSIONS_COUNT=3`
 
+~~1.0.0~~  
+~~1.1.0 ; 1.1.1 ;~~ 1.1.2 ; 1.1.5  
+1.2.0 ; 1.2.1  
+1.3.0 ; 1.3.1 ; **1.3.2**  
+1.4.0 ; **1.4.1**  
+2.0.0 ; 2.0.1 ; **2.0.2**
 
+- versions < 1.1.2 are ignored
+- the 3 highest \<major>.\<minor> versions are selected
+- the highest \<patch> is used
 
+---
+
+### warning
+
+use only **numbers** in phrasea releases:
+
+1.2.3 ; ~~v1.2.3~~ ; ~~1.2.1-beta4~~
+
+because 1.2.1-beta4 will be interpreted as 1.2.14, and elected as > 1.2.3
