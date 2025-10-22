@@ -91,7 +91,7 @@ class build extends Command
 
             foreach ($apps as $app) {
                 $this->filesystem->mirror(
-                    self::DOWNLOAD_DIR . '/' . $tag . '/generated/' . $app ,
+                    self::DOWNLOAD_DIR . '/' . $tag . '/generated/' . $app . '/doc/',
                     self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app
                 );
                 $this->output->writeln(sprintf('Merged app "%s" to %s',
