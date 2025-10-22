@@ -23,5 +23,5 @@ rm -rf ./importer/downloads/tmpclone
 mkdir -p ./importer/downloads/$TAG/databox
 docker pull public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG
 IMAGE_ID=$(docker create public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG)
-docker cp $IMAGE_ID:/srv/doc ./importer/downloads/$TAG/generated/databox || echo "No /srv/doc folder found in image"
+docker cp $IMAGE_ID:/srv/app/doc ./importer/downloads/$TAG/generated/databox || echo "No /srv/doc folder found in image"
 docker rm -v $IMAGE_ID
