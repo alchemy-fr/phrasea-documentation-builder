@@ -17,14 +17,12 @@ services:
         - PHRASEA_DATETIME=${PHRASEA_DATETIME}
     networks:
       - internal
-#    volumes:
-#        - ./importer/:/srv/app
-#        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+    volumes:
+        - ./importer/:/srv/app
+        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
     ports:
       - "8080:80"
     environment:
-      - PHRASEA_GITHUB=${PHRASEA_GITHUB}
-      - PHRASEA_IMAGES=${PHRASEA_IMAGES}
       - PHRASEA_REFNAME=${PHRASEA_REFNAME}
       - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
       - PHRASEA_DATETIME=${PHRASEA_DATETIME}

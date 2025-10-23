@@ -72,35 +72,35 @@ class build extends Command
 
         foreach ($versions as $tag => $semver) {
 
-            $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/doc');
-            $this->filesystem->remove(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged');
-            // list specific applications (directories at /, except /doc which is the "general" documentation)
+            $this->filesystem->remove(self::DOWNLOAD_DIR . '/' . $tag . '/_merged');
+
+            // list specific applications
             $apps = [];
-            $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag . '/generated', \FilesystemIterator::SKIP_DOTS);
+            $di2 = new \FilesystemIterator(self::DOWNLOAD_DIR . '/' . $tag . '/_generated', \FilesystemIterator::SKIP_DOTS);
             foreach ($di2 as $appDir) {
                 if ($appDir->isDir()) {
                     $apps[] = $appDir->getFilename();
-                    $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/' . $appDir->getFilename());
+//                    $this->filesystem->remove(self::DOCUSAURUS_PROJECT_DIR . '/docs/' . $appDir->getFilename());
                 }
             }
 
             $this->filesystem->mirror(
-                self::DOWNLOAD_DIR . '/' . $tag . '/doc/',
-                self::DOWNLOAD_DIR . '/' . $tag . '/docmerged/'
+                self::DOWNLOAD_DIR . '/' . $tag . '/src/',
+                self::DOWNLOAD_DIR . '/' . $tag . '/_merged/'
             );
 
             foreach ($apps as $app) {
                 $this->filesystem->mirror(
-                    self::DOWNLOAD_DIR . '/' . $tag . '/generated/' . $app . '/doc/',
-                    self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app
+                    self::DOWNLOAD_DIR . '/' . $tag . '/_generated/' . $app . '/doc/',
+                    self::DOWNLOAD_DIR . '/' . $tag . '/_merged/doc/_' . $app
                 );
                 $this->output->writeln(sprintf('Merged app "%s" to %s',
                     $app,
-                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged' . '/_' . $app)
+                    realpath(self::DOWNLOAD_DIR . '/' . $tag . '/_merged/doc/_' . $app)
                 ));
             }
 
-            $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/docmerged', $tag);
+            $this->compileFiles(self::DOWNLOAD_DIR . '/' . $tag . '/_merged/doc', $tag);
 
             // version
             $this->runCommand(

@@ -1,5 +1,7 @@
 # documentation builder
 
+## Documentation generation
+
 Documentation is generated when:
 
 - A **release** X.Y.Z of phrasea is made
@@ -39,3 +41,15 @@ use only **numbers** in phrasea releases:
 1.2.3 ; ~~v1.2.3~~ ; ~~1.2.1-beta4~~
 
 because 1.2.1-beta4 will be interpreted as 1.2.14, and elected as > 1.2.3
+
+---
+## Serve
+
+### a "branch" version
+`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation:ps-906_documentation-refacto-md`
+
+### a "tag" version
+`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation:1.2.3`
+
+### the lastest tag
+`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation`
