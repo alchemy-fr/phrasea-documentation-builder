@@ -30,9 +30,6 @@ jobs:
       - name: List and Pull single image
         if: ${{env.PHRASEA_REFTYPE == 'branch'}}
         run: |
-          echo "========== Pulling documentation for branch: ${{env.PHRASEA_REFNAME}}"
-          tree
-          echo ===========
           ./importer/download_tag.sh "${{env.PHRASEA_REFNAME}}"
 
       ### if workflow runs because a release, prepare all x.y.z versions of documentation

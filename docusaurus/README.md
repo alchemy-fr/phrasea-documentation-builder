@@ -29,10 +29,10 @@ pnpm run serve
 
 ## add search
 
-https://github.com/praveenn77/docusaurus-lunr-search
+https://github.com/cmfcmf/docusaurus-search-local
 
 ```shell
-pnpm i docusaurus-lunr-search@3.6 lunr lunr-languages
+pnpm install @cmfcmf/docusaurus-search-local
 pnpm dedupe
 ```
 
@@ -41,20 +41,19 @@ pnpm dedupe
 ```typescript
 // docusaurus.config.ts
 
-const config: Config = {
+plugins: [
     ...
-    plugins: [
-        ...,
-        // add parsing
-        [ 
-            require.resolve('docusaurus-lunr-search'),
-            {
-                languages: ['en', 'fr'] // language codes
-            }
-        ]
+    [
+        require.resolve("@cmfcmf/docusaurus-search-local"),
+        {
+            language: ['en', 'fr'],
+            indexDocs: true,
+            indexBlog: false,
+            indexPages: false
+        },
     ],
     ...
-};
+]
 ```
 
 ## add i18n
@@ -103,9 +102,10 @@ const config: Config = {
     ...
 };
 ```
+
 ### translate md files
 
-a (incomplete) mirror of `docs/*` must be translated to `i18n/{locale}/docusaurus-plugin-content-docs/current`
+a (possibly incomplete) mirror of `docs/*` must be translated to `i18n/{locale}/docusaurus-plugin-content-docs/current`
 
 e.g. translate intro.md to fr
 ```shell

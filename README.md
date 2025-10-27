@@ -1,5 +1,88 @@
 # documentation builder
 
+## phrasea files structure
+
+The files are extracted from 2 types of source:
+- the GitHub repository
+
+    contains "static" files in the `/doc` directory.
+- the docker images
+
+    contains "dynamic" files generated during the build.
+
+    *for now only `databox-api-php` generates dynamic files.*
+
+### "outdoc" files:
+Some static files **referenced by `/doc`** pages are **outside** the `/doc` directory, e.g.
+- configuration files, sources files, ...
+- README.md files of each "application" like dashboard, databox, uploader, ...
+- relative `doc` directories inside those same apps.
+
+To include an "outdoc" file or directory to the documentation, add it to the `/doc/include.list` file:
+
+```text
+/bin/setup.sh
+/configs/config.json
+/dashboard/client/README.md
+/databox/README.md
+/databox/indexer/doc
+...
+```
+
+### i18n:
+
+#### Translating a page **label**:
+
+The displayed label comes from
+- The Front Matter `title`, e.g.:
+
+```yaml
+---
+title: 'Attribute Initial Values'
+---
+```
+
+- else, the first Header in markdown, e.g.:
+
+```markdown
+# Setup (with docker-compose)
+```
+- else, the name of the file
+
+
+#### Translating a page **content**:
+
+To translate a **file** `foobar.md` (default locale='en') to french: Create `foobar.fr.md` in the same directory.
+
+#### Translating a directory (chapter) label:
+
+By default, for the "chapters" navigation tree (left sidebar), directory names used.
+
+To translate a chapter label (or to give it a friendly english name), add a `_locales.yaml` **in** the directory:
+
+```yaml
+# /doc/tech/storage/_locales.yaml
+fr: Stockage
+en: Storage
+```
+
+### Order of items in navigation sidebar
+
+#### Order of pages (files)
+
+Files are handled by alphabetical order. Add a numerical prefix to the name, e.g.: `/doc/tech/01_setup.md`
+
+Don't forget to set a visible label in the file (by FrontMatter title or markdown Header), 
+or the filename will be shown.
+
+important: Links to this page must be fixed in all other md files !
+
+#### Order of chapters (directories)
+
+------------ to be checked ------------- 
+
+---
+
 ## Documentation generation
 
 Documentation is generated when:
@@ -40,7 +123,7 @@ use only **numbers** in phrasea releases:
 
 1.2.3 ; ~~v1.2.3~~ ; ~~1.2.1-beta4~~
 
-because 1.2.1-beta4 will be interpreted as 1.2.14, and elected as > 1.2.3
+because 1.2.1-beta4 will be interpreted as 1.2.14, and elected as > 1.2.3 :(
 
 ---
 ## Serve

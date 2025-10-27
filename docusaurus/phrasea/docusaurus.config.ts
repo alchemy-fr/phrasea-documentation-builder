@@ -115,7 +115,6 @@ const config: Config = {
                         type: 'localeDropdown',
                         position: 'right',
                     },
-
                 ],
             },
             footer: {
@@ -198,7 +197,6 @@ const config: Config = {
                 indexPages: false
             },
         ],
-
     ],
 
     themes: ["docusaurus-theme-openapi-docs"],
