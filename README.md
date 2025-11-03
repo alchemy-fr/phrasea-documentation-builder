@@ -1,4 +1,4 @@
-# documentation builder
+# Documentation Builder
 
 ## phrasea files structure
 
@@ -12,28 +12,12 @@ The files are extracted from 2 types of source:
 
     *for now only `databox-api-php` generates dynamic files.*
 
-### "outdoc" files:
-Some static files **referenced by `/doc`** pages are **outside** the `/doc` directory, e.g.
-- configuration files, sources files, ...
-- README.md files of each "application" like dashboard, databox, uploader, ...
-- relative `doc` directories inside those same apps.
 
-To include an "outdoc" file or directory to the documentation, add it to the `/doc/include.list` file:
+## i18n
 
-```text
-/bin/setup.sh
-/configs/config.json
-/dashboard/client/README.md
-/databox/README.md
-/databox/indexer/doc
-...
-```
+### Translating a page **title**:
 
-### i18n:
-
-#### Translating a page **label**:
-
-The displayed label comes from
+The displayed title comes either from
 - The Front Matter `title`, e.g.:
 
 ```yaml
@@ -42,19 +26,20 @@ title: 'Attribute Initial Values'
 ---
 ```
 
-- else, the first Header in markdown, e.g.:
+- or the first Header in the markdown content, e.g.:
 
 ```markdown
-# Setup (with docker-compose)
+# My Page Title
 ```
-- else, the name of the file
+
+- or the name of the file (without extension)
 
 
-#### Translating a page **content**:
+### Translating page **content**:
 
-To translate a **file** `foobar.md` (default locale='en') to french: Create `foobar.fr.md` in the same directory.
+To translate a file `foobar.md` (default locale='en') to french, create `foobar.fr.md` in the same directory.
 
-#### Translating a directory (chapter) label:
+### Translating a directory (chapter) label:
 
 By default, for the "chapters" navigation tree (left sidebar), directory names used.
 
@@ -66,9 +51,9 @@ fr: Stockage
 en: Storage
 ```
 
-### Order of items in navigation sidebar
+## Order of items in navigation sidebar
 
-#### Order of pages (files)
+### Order of pages (files)
 
 Files are handled by alphabetical order. Add a numerical prefix to the name, e.g.: `/doc/tech/01_setup.md`
 
@@ -77,29 +62,26 @@ or the filename will be shown.
 
 important: Links to this page must be fixed in all other md files !
 
-#### Order of chapters (directories)
+### Order of chapters (directories)
 
------------- to be checked ------------- 
-
----
+TODO
 
 ## Documentation generation
 
 Documentation is generated when:
 
-- A **release** X.Y.Z of phrasea is made
+- A **release** X.Y.Z of phrasea is published on GitHub
     
     The image is tagged `X.Y.Z` and `latest`
 
-
-- A **push** on a phrasea branch with "[documentation]" in the last commit message
+- A **push** on a phrasea branch and the last commit message contains `[documentation]`
 
     The image is tagged with the name of the branch, e.g. `"PS-xxx_my-doc-update"`
 
 
 Variables are defined by https://github.com/alchemy-fr/phrasea-documentation-builder/settings/environments
 
-- `MIN_VERSION` The minimum phrasea version to include, e.g. 3.12.5
+- `MIN_VERSION` The minimum phrasea version to include, e.g. `3.12.5`
 - `VERSIONS_COUNT` The maximum number of versions to include on "releases" documentation.
 
 e.g. `MIN_VERSION=1.1.2` ; `VERSIONS_COUNT=3`
@@ -115,24 +97,37 @@ e.g. `MIN_VERSION=1.1.2` ; `VERSIONS_COUNT=3`
 - the 3 highest \<major>.\<minor> versions are selected
 - the highest \<patch> is used
 
----
+### Important note about versioning
 
-### warning
-
+When releasing phrasea,
 use only **numbers** in phrasea releases:
 
 1.2.3 ; ~~v1.2.3~~ ; ~~1.2.1-beta4~~
 
-because 1.2.1-beta4 will be interpreted as 1.2.14, and elected as > 1.2.3 :(
+## Deploying and testing the documentation site locally
 
----
-## Serve
+Set the `IMAGE_TAG` (default: `latest`) environment variable to the desired version:
 
-### a "branch" version
-`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation:ps-906_documentation-refacto-md`
+```bash
+# A "branch" version:
+# export IMAGE_TAG=ps-906_documentation-refacto-md
+# A "tag" version:
+# export IMAGE_TAG=1.2.3
+docker compose up -d
+```
 
-### a "tag" version
-`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation:1.2.3`
+Then open your browser at [http://localhost:8080](http://localhost:8080)
 
-### the lastest tag
-`docker run -p 8085:80 ghcr.io/alchemy-fr/phrasea-documentation`
+See [.env](./.env) for other configuration options.
+
+## Development
+
+To build the documentation image locally (for development or testing):
+
+1. Ensure you have generated the dynamic documentation files by running the appropriate build scripts in your local phrasea repository.
+
+2. Run the build-local script with the path to your phrasea repository:
+
+```bash
+./bin/dev/build-local.sh /path/to/phrasea/repo
+```

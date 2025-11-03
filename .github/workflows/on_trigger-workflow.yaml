@@ -5,11 +5,9 @@ on:
       types: [trigger-workflow]
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY_NAME: public.ecr.aws/alchemyfr/ps-databox-api-php
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
-  # sent by workflow_dispatch from phrasea:on-push
+  # Sent by workflow_dispatch from phrasea:on-push
   PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || '' }}
   PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || '' }}
   PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || '' }}
@@ -21,19 +19,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: 'actions/checkout@v4'
         with:
           fetch-depth: 30
 
-      ### if workflow runs because a push of phrasea, prepare a single version of documentation
-
+      # If workflow runs because a push of phrasea, prepare a single version of documentation
       - name: List and Pull single image
         if: ${{env.PHRASEA_REFTYPE == 'branch'}}
         run: |
-          ./importer/download_tag.sh "${{env.PHRASEA_REFNAME}}"
+          ./bin/download-tag.sh "${{env.PHRASEA_REFNAME}}"
 
-      ### if workflow runs because a release, prepare all x.y.z versions of documentation
-
+      # If workflow runs because a release, prepare all x.y.z versions of documentation
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_REFTYPE == 'tag'}}
         run: |
@@ -45,16 +41,16 @@ jobs:
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             echo "$response" | jq -c '[.[]] | map({"tag": .tag_name | split(".") | {major: .[0]|gsub("[^0-9]"; "")|tonumber, minor: .[1]|gsub("[^0-9]"; "")|tonumber, patch: .[2]|gsub("[^0-9]"; "")|tonumber, full: join(".")}, "all": .}) | map({"tag":(.tag + {"v":(.tag.major*1000000 + .tag.minor*1000 + .tag.patch)}), "all": .all }) | group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch)) | map(select(.tag.v >= '${MIN_VERSION}')) | reverse | .[0:'${{vars.VERSIONS_COUNT}}'] | reverse' > releases.json
-            # docker cp releases.json ./importer/downloads
+            # docker cp releases.json ./downloads
             # Loop through releases
             cat releases.json | jq -r '.[] | .all.tag_name' | while read -r tag_name; do
-              ./importer/download_tag.sh "$tag_name"
+              ./bin/download-tag.sh "$tag_name"
             done
           fi
 
       - name: Dump downloads
         run: |
-          tree ./importer/downloads    
+          tree ./downloads    
 
       - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
@@ -71,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./importer/Dockerfile
+          file: ./Dockerfile
           provenance: false
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
@@ -85,7 +81,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./
-          file: ./importer/Dockerfile
+          file: ./Dockerfile
           provenance: false
           push: true
           tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}},${{ env.IMAGE_REGISTRY }}/phrasea-documentation:latest

@@ -1,4 +1,7 @@
 {
+    "name": "alchemy/doc-builder",
+    "description": "A tool to prepare documentation files for Docusaurus.",
+    "type": "project",
     "require": {
         "symfony/console": "^7.3",
         "symfony/filesystem": "^7.3",
@@ -9,7 +12,7 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "./"
+            "App\\": "./src"
         }
     }
 }
