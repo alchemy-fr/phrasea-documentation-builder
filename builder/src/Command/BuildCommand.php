@@ -17,6 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 #[AsCommand(name: 'build')]
 class BuildCommand extends Command
 {
+    private const string NO_LOCALE = '_';
     private Filesystem $filesystem;
 
     public function __construct(?string $name = null, ?Filesystem $filesystem = null)
@@ -38,14 +39,14 @@ class BuildCommand extends Command
     {
         $projectDir = $input->getArgument('docusaurus-project-dir');
         $docDir = $input->getArgument('doc-dir');
-        
+
         $output->writeln('-------- running php build -------');
-        foreach(['PHRASEA_REFNAME', 'PHRASEA_REFTYPE', 'PHRASEA_DATETIME'] as $env) {
+        foreach (['PHRASEA_REFNAME', 'PHRASEA_REFTYPE', 'PHRASEA_DATETIME'] as $env) {
             $output->writeln($env . '=' . getenv($env));
         }
 
         $versions = [];
-        foreach(new \FilesystemIterator($docDir, \FilesystemIterator::SKIP_DOTS) as $versionDir) {
+        foreach (new \FilesystemIterator($docDir, \FilesystemIterator::SKIP_DOTS) as $versionDir) {
             if (!$versionDir->isDir()) {
                 continue;
             }
@@ -53,13 +54,12 @@ class BuildCommand extends Command
             $output->writeln('Download dir contains: ' . $tag);
             try {
                 $versions[$tag] = new Semver\Version($tag);
-            }
-            catch (SemVer\Exceptions\InvalidVersionException $e) {
+            } catch (SemVer\Exceptions\InvalidVersionException $e) {
                 $versions[$tag] = null;
             }
         }
         uasort($versions, function ($a, $b) {
-            if($a === null || $b === null) {
+            if ($a === null || $b === null) {
                 return $a === $b ? 0 : ($a === null ? -1 : 1);
             }
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
@@ -91,15 +91,15 @@ class BuildCommand extends Command
                     $docDir . '/' . $tag . '/_generated/' . $app . '/doc/',
                     $docDir . '/' . $tag . '/_merged/doc/_' . $app
                 );
-                $output->writeln(sprintf('Merged app "%s" to %s',
+                $output->writeln(sprintf(
+                    'Merged app "%s" to %s',
                     $app,
                     realpath($docDir . '/' . $tag . '/_merged/doc/_' . $app)
                 ));
             }
 
-            $this->compileFiles($projectDir, $docDir . '/' . $tag . '/_merged/doc', $output);
+            $this->compileFiles($tag, $projectDir, $docDir . '/' . $tag . '/_merged/doc', $output);
 
-            // version
             $this->runCommand(
                 ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
                 $projectDir,
@@ -120,16 +120,16 @@ class BuildCommand extends Command
         );
         file_put_contents(
             $projectDir . '/build/build.html',
-            '<html><pre>'.$process->getOutput().'</pre></html>'
+            '<html lang="en"><pre>'.$process->getOutput().'</pre></html>'
         );
         file_put_contents(
             $projectDir . '/build/build-error.html',
-            '<html><pre>'.$process->getErrorOutput().'</pre></html>'
+            '<html lang="en"><pre>'.$process->getErrorOutput().'</pre></html>'
         );
         file_put_contents(
             $projectDir . '/build/version.html',
             sprintf(
-                "<html><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>",
+                '<html lang="en"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>',
                 getenv('PHRASEA_REFNAME'),
                 getenv('PHRASEA_REFTYPE'),
                 getenv('PHRASEA_DATETIME')
@@ -141,18 +141,20 @@ class BuildCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function runCommand(array $command, string $workingDir, OutputInterface $output, int $timeout=60): Process
+    private function runCommand(array $command, string $workingDir, OutputInterface $output, int $timeout = 60): Process
     {
         $m = join(' ', array_map(
-            fn($m) => escapeshellcmd($m) === $m ? $m : escapeshellarg($m),
+            fn ($m) => escapeshellcmd($m) === $m ? $m : escapeshellarg($m),
             $command
         ));
         $output->writeln('<info>Running command:</info> ' . $m);
 
-        $command = array_map(function($c) {
+        $command = array_map(function ($c) {
             return preg_replace_callback(
                 '|\{\{(\w+)}}|',
-                fn($m) => getenv($m[1]), $c);
+                fn ($m) => getenv($m[1]),
+                $c
+            );
         }, $command);
 
         $process = new Process($command, $workingDir);
@@ -171,48 +173,48 @@ class BuildCommand extends Command
         return $process;
     }
 
-    private function compileFiles(string $projectDir, string $unzipDir, OutputInterface $output): void
+    private function compileFiles(string $tag, string $projectDir, string $dir, OutputInterface $output): void
     {
         // ---- dispatch the files in the documentation directory
         $translations = [];
-        $scan = function(string $subDir, int $depth=0) use (&$scan, $unzipDir, &$translations, $output, $projectDir) {
+        $scan = function (string $subDir, int $depth = 0) use (&$scan, $dir, &$translations, $output, $projectDir, $tag) {
             $tab = str_repeat('  ', $depth);
-            $scanDir =  $unzipDir . $subDir;
+            $scanDir =  $dir . $subDir;
 
-            $output->writeln(sprintf("%sScanning .%s",
+            $output->writeln(sprintf(
+                "%sScanning .%s",
                 $tab,
                 $subDir
             ));
 
             /** @var SplFileInfo $file */
             foreach (new \FilesystemIterator($scanDir, \FilesystemIterator::SKIP_DOTS) as $file) {
-
                 if ($file->isFile()) {
-                    if($file->getFilename() === '_locales.yml' || $file->getFilename() === '.gitkeep') {
+                    if ($file->getFilename() === '_locales.yml' || $file->getFilename() === '.gitkeep') {
                         continue;
                     }
 
                     // remove extension
                     $dotExtension = $file->getExtension() ? ('.' . $file->getExtension()) : '';
                     $bn = $file->getBasename($dotExtension);
-                    $locale = '_';
-                    // find locale ?
+                    $locale = self::NO_LOCALE;
+                    // find locale?
                     $matches = [];
-                    if(preg_match('/(.*)\.(\w*)/', $bn, $matches) && count($matches) === 3) {
+                    if (preg_match('/(.*)\.(\w*)/', $bn, $matches) && count($matches) === 3) {
                         $bn = $matches[1];
                         $locale = $matches[2];
-                        if($locale === 'en') {
-                            $locale = '_'; // no locale for en
+                        if ($locale === 'en') {
+                            $locale = self::NO_LOCALE; // no locale for en
                         }
                     }
 
-                    if($locale === '_') {
+                    if ($locale === self::NO_LOCALE) {
                         $subTargetDir = 'docs'. $subDir;
-                    }
-                    else {
+                    } else {
                         $subTargetDir = 'i18n/' . $locale . '/docusaurus-plugin-content-docs/current'. $subDir;
                     }
-                    $output->writeln(sprintf("%s  copy %s to %s/%s",
+                    $output->writeln(sprintf(
+                        "%s  copy %s to %s/%s",
                         $tab,
                         $file->getFilename(),
                         $subTargetDir,
@@ -220,12 +222,21 @@ class BuildCommand extends Command
                     ));
                     $targetDir = $projectDir . '/' . $subTargetDir;
                     $this->filesystem->mkdir($targetDir, 0777);
-                    $this->filesystem->copy($file->getPathname(), $targetDir . '/' . $bn . $dotExtension, true);
+                    $destination = $targetDir.'/'.$bn.$dotExtension;
+                    $this->filesystem->copy($file->getPathname(), $destination, true);
 
+                    $this->filesystem->dumpFile(
+                        $destination,
+                        preg_replace(
+                            "#\(@phrasea-repo/#",
+                            sprintf('(https://github.com/alchemy-fr/phrasea/blob/%s/', $tag),
+                            $this->filesystem->readFile($destination)
+                        )
+                    );
                 } elseif ($file->isDir()) {
-                    if(file_exists($file->getPathname() . '/_locales.yml')) {
+                    if (file_exists($file->getPathname() . '/_locales.yml')) {
                         foreach (Yaml::parse(file_get_contents($file->getPathname() . '/_locales.yml')) as $locale => $translation) {
-                            if(!isset($translations[$locale])) {
+                            if (!isset($translations[$locale])) {
                                 $translations[$locale] = [];
                             }
                             $t = [
@@ -242,12 +253,10 @@ class BuildCommand extends Command
             }
         };
 
-        $output->writeln(sprintf("Compiling %s to %s", realpath($unzipDir), realpath($projectDir)));
+        $output->writeln(sprintf("Compiling %s to %s", realpath($dir), realpath($projectDir)));
         $scan('');
 
-        // $this->filesystem->remove($unzipDir);
-
-        // dump version
+        // Dump version
         $target = $projectDir . '/version.json';
         $version = [
             'refname' => getenv('PHRASEA_REFNAME'),
@@ -257,17 +266,17 @@ class BuildCommand extends Command
         file_put_contents($target, json_encode($version, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         $output->writeln("Wrote version to: " . realpath($target));
 
-        // dump translations to json files
+        // Dump translations to json files
         foreach ($translations as $locale => $translation) {
             $target = $projectDir . '/i18n/' . $locale . '/docusaurus-plugin-content-docs/current.json';
-            if(!file_exists(dirname($target))) {
+            if (!file_exists(dirname($target))) {
                 $this->filesystem->mkdir(dirname($target));
             }
             file_put_contents($target, json_encode($translation, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-            $output->writeln("Wrote translations to: " . realpath($target));
+            $output->writeln('Wrote translations to: ' . realpath($target));
         }
 
-        // create the api documentation from the json schema
+        // Create the api documentation from the JSON schema
         $this->runCommand(
             ['pnpm', 'run', 'gen-api-docs', 'databox'],
             $projectDir,
