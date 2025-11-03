@@ -20,6 +20,21 @@ function createDocLink(id: string, label: string) {
     }
 }
 
+function createOpenApiSidebarCategory(id: string, label: string) {
+    return {
+        type: "category",
+        label: `${label} API`,
+        link: {
+            type: "generated-index",
+            title: `Phrasea ${label} API`,
+            description:
+                `This is the Phrasea ${label} API.`,
+            slug: `/category/${id}-api`
+        },
+        items: require(`./docs/${id}_api/sidebar.ts`),
+    };
+}
+
 const sidebars: SidebarsConfig = {
     techdocSidebar: [
         {
@@ -31,8 +46,8 @@ const sidebars: SidebarsConfig = {
             label: "API References",
             items: [
                 createDocLink("databox", "Databox"),
-                createDocLink("expose", "Expose"),
-                createDocLink("uploader", "Uploader"),
+                // createDocLink("expose", "Expose"),
+                // createDocLink("uploader", "Uploader"),
             ]
         },
     ],
@@ -43,18 +58,9 @@ const sidebars: SidebarsConfig = {
         },
     ],
     openApiSidebar: [
-        {
-            type: "category",
-            label: "Databox API",
-            link: {
-                type: "generated-index",
-                title: "Phrasea Databox API",
-                description:
-                    "This is the Phrasea Databox API.",
-                slug: "/category/databox-api"
-            },
-            items: require("./docs/databox_api/sidebar.ts")
-        },
+        createOpenApiSidebarCategory("databox", "Databox"),
+        // createOpenApiSidebarCategory("expose", "Expose"),
+        // createOpenApiSidebarCategory("uploader", "Uploader"),
     ]
 };
 
