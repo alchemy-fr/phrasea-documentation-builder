@@ -276,28 +276,34 @@ class BuildCommand extends Command
             $output->writeln('Wrote translations to: ' . realpath($target));
         }
 
-        // Create the api documentation from the JSON schema
-        $this->runCommand(
-            ['pnpm', 'run', 'gen-api-docs', 'databox'],
-            $projectDir,
-            $output
-        );
+        $apps = ['databox', 'expose', 'uploader'];
 
-        // ========== fix for api auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
-        //            we add a "key" to each item
-        $output->writeln("Patching sidebar.ts to add keys.");
-        $this->filesystem->copy(
-            $projectDir . '/docs/databox_api/sidebar.ts',
-            $projectDir . '/docs/databox_api/sidebar-bkp.ts',
-            true
-        );
-        $this->filesystem->dumpFile(
-            $projectDir . '/docs/databox_api/sidebar.ts',
-            preg_replace(
-                "/(( *)id: (.*),)/m",
-                "$1\n$2key: $3,",
-                $this->filesystem->readFile($projectDir . '/docs/databox_api/sidebar.ts')
-            )
-        );
+        // Create the API documentation from the JSON schema
+        foreach ($apps as $app) {
+            $this->runCommand(
+                ['pnpm', 'run', 'gen-api-docs', $app],
+                $projectDir,
+                $output
+            );
+
+            // ========== fix for api auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
+            //            we add a "key" to each item
+
+            $docDir = $projectDir . '/docs/' . $app . '_api';
+            $output->writeln("Patching sidebar.ts to add keys.");
+            $this->filesystem->copy(
+                $docDir . '/sidebar.ts',
+                $docDir . '/sidebar-bkp.ts',
+                true
+            );
+            $this->filesystem->dumpFile(
+                $docDir . '/sidebar.ts',
+                preg_replace(
+                    "/(( *)id: (.*),)/m",
+                    "$1\n$2key: $3,",
+                    $this->filesystem->readFile($docDir . '/sidebar.ts')
+                )
+            );
+        }
     }
 }

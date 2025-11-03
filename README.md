@@ -10,8 +10,6 @@ The files are extracted from 2 types of source:
 
     contains "dynamic" files generated during the build.
 
-    *for now only `databox-api-php` generates dynamic files.*
-
 
 ## i18n
 

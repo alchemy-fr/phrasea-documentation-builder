@@ -172,14 +172,9 @@ const config: Config = {
                 id: "openapi",
                 docsPluginId: "classic",
                 config: {
-                    databox: {
-                        specPath: "docs/_databox/_schema.json",
-                        outputDir: "docs/databox_api",
-                        sidebarOptions: {
-                            groupPathsBy: "tag",
-                            categoryLinkSource: "tag",
-                        },
-                    } satisfies OpenApiPlugin.Options,
+                    databox: createApiPlugin('databox'),
+                    expose: createApiPlugin('expose'),
+                    uploader: createApiPlugin('uploader'),
                 } satisfies Plugin.PluginOptions,
             }
         ],
@@ -199,4 +194,15 @@ const config: Config = {
 
 export default async function createConfig() {
     return config;
+}
+
+function createApiPlugin(appName: string): OpenApiPlugin.Options {
+    return {
+        specPath: `docs/_${appName}/_schema.json`,
+        outputDir: `docs/${appName}_api`,
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
+    } satisfies OpenApiPlugin.Options;
 }

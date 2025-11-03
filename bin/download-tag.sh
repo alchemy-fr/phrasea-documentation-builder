@@ -10,8 +10,6 @@ if [[ "$TAG" =~ [\ /] ]]; then
   exit 1
 fi
 
-DATABOX_IMAGE="public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG"
-
 (cd ./downloads \
   && rm -rf ./tmpclone \
   && mkdir -p ./$TAG/src \
@@ -22,9 +20,12 @@ DATABOX_IMAGE="public.ecr.aws/alchemyfr/ps-databox-api-php:$TAG"
   ) \
   && cp -r ./tmpclone/doc ./$TAG/src/ \
   && rm -rf ./tmpclone \
-  && mkdir -p ./$TAG/_generated/databox \
-  && docker pull ${DATABOX_IMAGE} \
-  && IMAGE_ID=$(docker create ${DATABOX_IMAGE}) \
-  && docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/databox || echo "No /srv/app/doc folder found in image" \
-  && docker rm -v $IMAGE_ID
+  for app in databox expose uploader; do \
+    APP_IMAGE="public.ecr.aws/alchemyfr/ps-$app-api-php:$TAG"
+    mkdir -p ./$TAG/_generated/$app \
+    && docker pull ${APP_IMAGE} \
+    && IMAGE_ID=$(docker create ${APP_IMAGE}) \
+    && docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app || echo "No /srv/app/doc folder found in image $APP_IMAGE" \
+    && docker rm -v $IMAGE_ID
+  done
 )

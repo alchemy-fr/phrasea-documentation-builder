@@ -15,10 +15,13 @@ DEST="./downloads/${TAG}"
 
 rm -rf "${DEST}"
 
-mkdir -p "${DEST}/_generated/databox"
 mkdir -p "${DEST}/src"
 cp -r "$PHRASEA_DIR/doc" "${DEST}/src/doc"
-cp -r "$PHRASEA_DIR/databox/api/doc" "${DEST}/_generated/databox/"
+
+for dir in databox expose uploader; do
+  mkdir -p "${DEST}/_generated/${dir}"
+  cp -r "$PHRASEA_DIR/${dir}/api/doc" "${DEST}/_generated/${dir}/"
+done
 
 export PHRASEA_REFTYPE=branch
 export PHRASEA_REFNAME=${TAG}
