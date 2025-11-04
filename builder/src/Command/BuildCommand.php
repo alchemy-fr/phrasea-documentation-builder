@@ -113,34 +113,43 @@ class BuildCommand extends Command
         $patchedConfig = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $orgConfig);
         file_put_contents($projectDir . '/docusaurus.config.ts', $patchedConfig);
 
-        $this->filesystem->mkdir($projectDir . '/build');
-        $process = $this->runCommand(
-            ['pnpm', 'run', 'build'],
-            $projectDir,
-            $output,
-            3600
-        );
-        file_put_contents(
-            $projectDir . '/build/build.html',
-            '<html lang="en"><pre>'.$process->getOutput().'</pre></html>'
-        );
-        file_put_contents(
-            $projectDir . '/build/build-error.html',
-            '<html lang="en"><pre>'.$process->getErrorOutput().'</pre></html>'
-        );
-        file_put_contents(
-            $projectDir . '/build/version.html',
-            sprintf(
-                '<html lang="en"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>',
-                getenv('PHRASEA_REFNAME'),
-                getenv('PHRASEA_REFTYPE'),
-                getenv('PHRASEA_DATETIME')
-            )
-        );
+        try {
+            $this->filesystem->mkdir($projectDir . '/build');
+            $process = $this->runCommand(
+                ['pnpm', 'run', 'build'],
+                $projectDir,
+                $output,
+                3600
+            );
+            file_put_contents(
+                $projectDir . '/build/build.html',
+                '<html lang="en"><pre>'.$process->getOutput().'</pre></html>'
+            );
+            file_put_contents(
+                $projectDir . '/build/build-error.html',
+                '<html lang="en"><pre>'.$process->getErrorOutput().'</pre></html>'
+            );
+            file_put_contents(
+                $projectDir . '/build/version.html',
+                sprintf(
+                    '<html lang="en"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>',
+                    getenv('PHRASEA_REFNAME'),
+                    getenv('PHRASEA_REFTYPE'),
+                    getenv('PHRASEA_DATETIME')
+                )
+            );
 
-        file_put_contents($projectDir . '/docusaurus.config.ts', $orgConfig);
+            file_put_contents($projectDir . '/docusaurus.config.ts', $orgConfig);
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            // Restore config to prevent side effects on next runs
+            $orgConfig = file_get_contents($projectDir . '/docusaurus.config.ts');
+            $patchedConfig = str_replace('includeCurrentVersion: false', 'includeCurrentVersion: true', $orgConfig);
+            file_put_contents($projectDir . '/docusaurus.config.ts', $patchedConfig);
+
+            throw $e;
+        }
     }
 
     private function runCommand(array $command, string $workingDir, OutputInterface $output, int $timeout = 60): Process
