@@ -65,6 +65,8 @@ class BuildCommand extends Command
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
 
+        rrmdir($projectDir . '/docs');
+
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -271,7 +273,6 @@ class BuildCommand extends Command
         // Create the API documentation from the JSON schema
         foreach ($apps as $app) {
             $docDir = $projectDir . '/docs/' . $app . '_api';
-            rrmdir($docDir);
 
             $this->runCommand(
                 ['pnpm', 'run', 'gen-api-docs', $app],

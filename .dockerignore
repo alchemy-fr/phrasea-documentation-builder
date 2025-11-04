@@ -7,6 +7,7 @@
 /docusaurus/phrasea/versioned_sidebars
 /docusaurus/phrasea/build
 /docusaurus/phrasea/i18n
+/docusaurus/phrasea/docs
 /docusaurus/phrasea/.docusaurus
 /docusaurus/phrasea/.cache-loader
 /docusaurus/phrasea/npm-debug.log*

@@ -25,3 +25,4 @@ yarn-error.log*
 /versions.json
 /versioned_docs
 /versioned_sidebars
+/docs
