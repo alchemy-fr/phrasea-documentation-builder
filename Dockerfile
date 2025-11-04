@@ -41,5 +41,6 @@ ARG PHRASEA_REFTYPE
 
 ENV URL=https://doc.phrasea.com
 
+COPY ./docusaurus/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY ./docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
 COPY --from=build-docs /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
