@@ -46,8 +46,8 @@ const sidebars: SidebarsConfig = {
             label: "API References",
             items: [
                 createDocLink("databox", "Databox"),
-                // createDocLink("expose", "Expose"),
-                // createDocLink("uploader", "Uploader"),
+                createDocLink("expose", "Expose"),
+                createDocLink("uploader", "Uploader"),
             ]
         },
     ],
@@ -59,8 +59,8 @@ const sidebars: SidebarsConfig = {
     ],
     openApiSidebar: [
         createOpenApiSidebarCategory("databox", "Databox"),
-        // createOpenApiSidebarCategory("expose", "Expose"),
-        // createOpenApiSidebarCategory("uploader", "Uploader"),
+        createOpenApiSidebarCategory("expose", "Expose"),
+        createOpenApiSidebarCategory("uploader", "Uploader"),
     ]
 };
 

@@ -25,8 +25,7 @@ done
 
 export PHRASEA_REFTYPE=branch
 export PHRASEA_REFNAME=${TAG}
-export PHRASEA_REFNAME=${TAG}
 export SITE_NAME="Phrasea Dev"
 
-docker compose build \
-  && docker compose up -d
+docker compose build doc \
+  && docker compose up -d doc

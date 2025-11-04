@@ -17,8 +17,6 @@ COPY --from=composer:2.5.8 /usr/bin/composer /usr/bin/composer
 
 USER app
 
-COPY --chown=app:app ./downloads /srv/downloads
-COPY --chown=app:app ./builder /srv/builder
 COPY --chown=app:app ./docusaurus/phrasea /srv/docusaurus/phrasea
 
 WORKDIR /srv/docusaurus/phrasea
@@ -27,7 +25,13 @@ RUN pnpm install
 
 WORKDIR /srv/builder
 
+COPY --chown=app:app ./builder /srv/builder
+
 RUN composer install --no-dev --optimize-autoloader
+
+FROM builder AS build-docs
+
+COPY --chown=app:app ./downloads /srv/downloads
 
 RUN ["php", "application.php", "-vvv", "build", "/srv/docusaurus/phrasea", "/srv/downloads"]
 
@@ -38,4 +42,4 @@ ARG PHRASEA_REFTYPE
 ENV URL=https://doc.phrasea.com
 
 COPY ./docusaurus/nginx/headers-${PHRASEA_REFTYPE}.conf /etc/nginx/conf.d/
-COPY --from=builder /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/
+COPY --from=build-docs /srv/docusaurus/phrasea/build/ /usr/share/nginx/html/

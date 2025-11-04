@@ -223,14 +223,13 @@ class BuildCommand extends Command
                     $targetDir = $projectDir . '/' . $subTargetDir;
                     $this->filesystem->mkdir($targetDir, 0777);
                     $destination = $targetDir.'/'.$bn.$dotExtension;
-                    $this->filesystem->copy($file->getPathname(), $destination, true);
 
                     $this->filesystem->dumpFile(
                         $destination,
                         preg_replace(
                             "#\(@phrasea-repo/#",
                             sprintf('(https://github.com/alchemy-fr/phrasea/blob/%s/', $tag),
-                            $this->filesystem->readFile($destination)
+                            $this->filesystem->readFile($file->getPathname())
                         )
                     );
                 } elseif ($file->isDir()) {
@@ -280,30 +279,65 @@ class BuildCommand extends Command
 
         // Create the API documentation from the JSON schema
         foreach ($apps as $app) {
+            $docDir = $projectDir . '/docs/' . $app . '_api';
+            rrmdir($docDir);
+
             $this->runCommand(
                 ['pnpm', 'run', 'gen-api-docs', $app],
                 $projectDir,
                 $output
             );
 
-            // ========== fix for api auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
-            //            we add a "key" to each item
+            // Fix API auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
+            $sideBarSrc = $docDir.'/sidebar.ts';
+            $output->writeln(sprintf('Adding key props to %s', $sideBarSrc));
 
-            $docDir = $projectDir . '/docs/' . $app . '_api';
-            $output->writeln("Patching sidebar.ts to add keys.");
             $this->filesystem->copy(
-                $docDir . '/sidebar.ts',
+                $sideBarSrc,
                 $docDir . '/sidebar-bkp.ts',
                 true
             );
             $this->filesystem->dumpFile(
-                $docDir . '/sidebar.ts',
-                preg_replace(
-                    "/(( *)id: (.*),)/m",
-                    "$1\n$2key: $3,",
-                    $this->filesystem->readFile($docDir . '/sidebar.ts')
+                $sideBarSrc,
+                preg_replace_callback(
+                    '/\Wid:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
+                    function (array $regs) use ($app) {
+                        return sprintf('id:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                            $regs[1],
+                            $regs[2],
+                            $regs[3],
+                            $app,
+                        );
+                    },
+                    preg_replace_callback(
+                        '/type:\s*"category"\s*,\s*label:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
+                        function (array $regs) use ($app) {
+                            return sprintf('type: "category", label:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                                $regs[1],
+                                $regs[2],
+                                $regs[3],
+                                $app,
+                            );
+                        },
+                        $this->filesystem->readFile($sideBarSrc)
+                    )
                 )
             );
         }
+    }
+}
+
+function rrmdir(string $dir): void {
+    if (is_dir($dir)) {
+        $objects = scandir($dir);
+        foreach ($objects as $object) {
+            if ($object != "." && $object != "..") {
+                if (is_dir($dir. DIRECTORY_SEPARATOR .$object) && !is_link($dir."/".$object))
+                    rrmdir($dir. DIRECTORY_SEPARATOR .$object);
+                else
+                    unlink($dir. DIRECTORY_SEPARATOR .$object);
+            }
+        }
+        rmdir($dir);
     }
 }
