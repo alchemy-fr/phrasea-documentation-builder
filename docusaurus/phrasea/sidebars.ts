@@ -43,7 +43,7 @@ const sidebars: SidebarsConfig = {
         },
         {
             type: "category",
-            label: "API References",
+            label: "API Reference",
             items: [
                 createDocLink("databox", "Databox"),
                 createDocLink("expose", "Expose"),

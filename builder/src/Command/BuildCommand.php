@@ -143,20 +143,7 @@ class BuildCommand extends Command
 
     private function runCommand(array $command, string $workingDir, OutputInterface $output, int $timeout = 60): Process
     {
-        $m = join(' ', array_map(
-            fn ($m) => escapeshellcmd($m) === $m ? $m : escapeshellarg($m),
-            $command
-        ));
-        $output->writeln('<info>Running command:</info> ' . $m);
-
-        $command = array_map(function ($c) {
-            return preg_replace_callback(
-                '|\{\{(\w+)}}|',
-                fn ($m) => getenv($m[1]),
-                $c
-            );
-        }, $command);
-
+        $output->writeln('<info>Running command:</info> ' . implode(' ', $command));
         $process = new Process($command, $workingDir);
         $process->setTimeout($timeout);
         $process->setIdleTimeout($timeout);
@@ -165,6 +152,10 @@ class BuildCommand extends Command
             $output->write('.');
         });
         $output->writeln('');
+        $errorOutput = $process->getErrorOutput();
+        if (trim($errorOutput)) {
+            $output->writeln(sprintf('<error>%s</error>', $errorOutput));
+        }
 
         if (!$process->isSuccessful()) {
             throw new ProcessFailedException($process);
