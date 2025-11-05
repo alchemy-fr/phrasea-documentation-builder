@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 /path/to/local/phrasea/repo"
