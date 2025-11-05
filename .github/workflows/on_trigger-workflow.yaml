@@ -41,7 +41,6 @@ jobs:
           # Check if the response is valid
           if [ $? -eq 0 ]; then
             echo "$response" | jq -c '[.[]] | map({"tag": .tag_name | split(".") | {major: .[0]|gsub("[^0-9]"; "")|tonumber, minor: .[1]|gsub("[^0-9]"; "")|tonumber, patch: .[2]|gsub("[^0-9]"; "")|tonumber, full: join(".")}, "all": .}) | map({"tag":(.tag + {"v":(.tag.major*1000000 + .tag.minor*1000 + .tag.patch)}), "all": .all }) | group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch)) | map(select(.tag.v >= '${MIN_VERSION}')) | reverse | .[0:'${{vars.VERSIONS_COUNT}}'] | reverse' > releases.json
-            # docker cp releases.json ./downloads
             # Loop through releases
             cat releases.json | jq -r '.[] | .all.tag_name' | while read -r tag_name; do
               ./bin/download-tag.sh "$tag_name"

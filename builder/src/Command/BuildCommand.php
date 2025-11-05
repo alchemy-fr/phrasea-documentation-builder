@@ -65,8 +65,7 @@ class BuildCommand extends Command
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
 
-        rrmdir($projectDir . '/docs');
-
+        $this->filesystem->remove($projectDir . '/docs');
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -109,8 +108,8 @@ class BuildCommand extends Command
             );
         }
 
-        $orgConfig = file_get_contents($projectDir . '/docusaurus.config.ts');
-        $patchedConfig = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $orgConfig);
+        $originalConfig = file_get_contents($projectDir . '/docusaurus.config.ts');
+        $patchedConfig = str_replace('includeCurrentVersion: true', 'includeCurrentVersion: false', $originalConfig);
         file_put_contents($projectDir . '/docusaurus.config.ts', $patchedConfig);
 
         try {
@@ -139,14 +138,12 @@ class BuildCommand extends Command
                 )
             );
 
-            file_put_contents($projectDir . '/docusaurus.config.ts', $orgConfig);
+            file_put_contents($projectDir . '/docusaurus.config.ts', $originalConfig);
 
             return Command::SUCCESS;
         } catch (\Throwable $e) {
             // Restore config to prevent side effects on next runs
-            $orgConfig = file_get_contents($projectDir . '/docusaurus.config.ts');
-            $patchedConfig = str_replace('includeCurrentVersion: false', 'includeCurrentVersion: true', $orgConfig);
-            file_put_contents($projectDir . '/docusaurus.config.ts', $patchedConfig);
+            file_put_contents($projectDir . '/docusaurus.config.ts', $originalConfig);
 
             throw $e;
         }
@@ -303,7 +300,8 @@ class BuildCommand extends Command
                 preg_replace_callback(
                     '/\Wid:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
                     function (array $regs) use ($app) {
-                        return sprintf('id:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                        return sprintf(
+                            'id:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
                             $regs[1],
                             $regs[2],
                             $regs[3],
@@ -313,7 +311,8 @@ class BuildCommand extends Command
                     preg_replace_callback(
                         '/type:\s*"category"\s*,\s*label:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
                         function (array $regs) use ($app) {
-                            return sprintf('type: "category", label:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                            return sprintf(
+                                'type: "category", label:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
                                 $regs[1],
                                 $regs[2],
                                 $regs[3],
@@ -325,20 +324,5 @@ class BuildCommand extends Command
                 )
             );
         }
-    }
-}
-
-function rrmdir(string $dir): void {
-    if (is_dir($dir)) {
-        $objects = scandir($dir);
-        foreach ($objects as $object) {
-            if ($object != "." && $object != "..") {
-                if (is_dir($dir. DIRECTORY_SEPARATOR .$object) && !is_link($dir."/".$object))
-                    rrmdir($dir. DIRECTORY_SEPARATOR .$object);
-                else
-                    unlink($dir. DIRECTORY_SEPARATOR .$object);
-            }
-        }
-        rmdir($dir);
     }
 }
