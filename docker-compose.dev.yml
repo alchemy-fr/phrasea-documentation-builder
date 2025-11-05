@@ -1,0 +1,17 @@
+services:
+  builder:
+    image: alchemy-fr/phrasea-documentation-builder:${IMAGE_TAG}
+    build:
+        context: .
+        target: builder
+    command: 'tail -f /dev/null'
+    volumes:
+      - ./builder:/srv/builder
+      - ./docusaurus/phrasea:/srv/docusaurus/phrasea
+      - ./downloads:/srv/downloads:rw
+    environment:
+      - PHRASEA_REFNAME
+      - PHRASEA_REFTYPE
+      - PHRASEA_DATETIME
+      - SITE_NAME
+      - SITE_URL

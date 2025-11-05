@@ -1,0 +1,16 @@
+.github
+
+/docusaurus/phrasea/.cache-loader
+/docusaurus/phrasea/.docusaurus
+/docusaurus/phrasea/build
+/docusaurus/phrasea/docs
+/docusaurus/phrasea/i18n
+/docusaurus/phrasea/node_modules
+/docusaurus/phrasea/npm-debug.log*
+/docusaurus/phrasea/version.json
+/docusaurus/phrasea/versioned_docs
+/docusaurus/phrasea/versioned_sidebars
+/docusaurus/phrasea/versions.json
+
+/builder/vendor
+/builder.php-cs-fixer.cache

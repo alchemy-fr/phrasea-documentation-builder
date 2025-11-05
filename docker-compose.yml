@@ -1,28 +1,13 @@
-networks:
-  internal:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 174.40.0.0/16
-
 services:
-  builder:
-    image: "alchemy-fr/ps-documentation-builder:latest"
+  doc:
+    image: alchemy-fr/phrasea-documentation:${IMAGE_TAG}
     build:
-      context: ./
-      dockerfile: ./importer/Dockerfile
-      args:
-        - PHRASEA_REFNAME=${PHRASEA_REFNAME}
-        - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
-        - PHRASEA_DATETIME=${PHRASEA_DATETIME}
-    networks:
-      - internal
-    volumes:
-        - ./importer/:/srv/app
-        - ./docusaurus/phrasea/:/srv/docusaurus/phrasea
+        context: .
+        args:
+          - PHRASEA_REFNAME=${PHRASEA_REFNAME}
+          - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
+          - PHRASEA_DATETIME=${PHRASEA_DATETIME}
+          - SITE_NAME=${SITE_NAME}
+          - SITE_URL=${SITE_URL}
     ports:
-      - "8080:80"
-    environment:
-      - PHRASEA_REFNAME=${PHRASEA_REFNAME}
-      - PHRASEA_REFTYPE=${PHRASEA_REFTYPE}
-      - PHRASEA_DATETIME=${PHRASEA_DATETIME}
+      - "${SITE_PORT}:80"

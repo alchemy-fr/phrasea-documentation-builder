@@ -10,21 +10,16 @@ import * as version from "./version.json";
 // @ts-ignore
 import versions from './versions.json';
 
+const siteName = process.env.SITE_NAME || "Phrasea Documentation";
+
 const config: Config = {
-    title: "Phrasea documentation",
+    title: siteName,
     tagline: undefined,
-    url: "https://phrasea.documentation.com",
+    url: process.env.SITE_URL || "https://doc.phrasea.com",
     baseUrl: "/",
     onBrokenLinks: "warn",     // Opts: 'ignore' | 'log' | 'warn' | 'throw'
     onBrokenAnchors: "warn",
-
     favicon: "img/favicon.ico",
-
-    // GitHub pages deployment config.
-    // If you aren't using GitHub pages, you don't need these.
-    // organizationName: "alchemy-fr", // Usually your GitHub org/username.
-    // projectName: "phrasea-documentation-builder", // Usually your repo name.
-
     future: {
         v4: true,
         experimental_faster: true,
@@ -87,7 +82,7 @@ const config: Config = {
                 },
             },
             navbar: {
-                title: "Phrasea documentation",
+                title: siteName,
                 logo: {
                     alt: "Phrasea Logo",
                     src: "img/phrasea.svg",
@@ -121,11 +116,11 @@ const config: Config = {
                 style: "dark",
                 links: [
                     {
-                        label: 'phrasea',
+                        label: 'Phrasea',
                         href: 'https://www.phrasea.com',
                     },
                     {
-                        label: 'github',
+                        label: 'Github',
                         href: 'https://github.com/alchemy-fr/phrasea',
                     },
 
@@ -177,14 +172,9 @@ const config: Config = {
                 id: "openapi",
                 docsPluginId: "classic",
                 config: {
-                    databox: {
-                        specPath: "docs/_databox/_schema.json",
-                        outputDir: "docs/databox_api",
-                        sidebarOptions: {
-                            groupPathsBy: "tag",
-                            categoryLinkSource: "tag",
-                        },
-                    } satisfies OpenApiPlugin.Options,
+                    databox: createApiPlugin('databox'),
+                    expose: createApiPlugin('expose'),
+                    uploader: createApiPlugin('uploader'),
                 } satisfies Plugin.PluginOptions,
             }
         ],
@@ -204,4 +194,15 @@ const config: Config = {
 
 export default async function createConfig() {
     return config;
+}
+
+function createApiPlugin(appName: string): OpenApiPlugin.Options {
+    return {
+        specPath: `docs/_${appName}/_schema.json`,
+        outputDir: `docs/${appName}_api`,
+        sidebarOptions: {
+            groupPathsBy: "tag",
+            categoryLinkSource: "tag",
+        },
+    } satisfies OpenApiPlugin.Options;
 }

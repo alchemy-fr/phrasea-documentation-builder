@@ -1,5 +1,1 @@
-/generatedDoc
-/databox/vendor/
-/docusaurus/docusaurus-template-openapi-docs/
-/docusaurus/phrasea/docs/databox_api/
-/importer/vendor/
+.env.*

@@ -4,6 +4,7 @@ yarn.lock
 
 # Production
 /build
+/i18n
 
 # Generated files
 .docusaurus
@@ -19,3 +20,9 @@ yarn.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/docs
+/version.json
+/versioned_docs
+/versioned_sidebars
+/versions.json
