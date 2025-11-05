@@ -3,17 +3,30 @@ name: build-builder
 on:
   repository_dispatch:
       types: [trigger-workflow]
+  workflow_dispatch:
+    inputs:
+      PHRASEA_REFNAME:
+        description: 'The branch name or tag name of phrasea'
+        required: true
+        default: ''
+      PHRASEA_REFTYPE:
+        description: 'The reftype of phrasea ("branch" or "tag")'
+        required: true
+        default: 'branch'
+      PHRASEA_DATETIME:
+        description: 'The datetime of phrasea build'
+        required: false
+        default: ''
 
 env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
-
-  # Sent by workflow_dispatch from phrasea:on-push
-  PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || '' }}
-  PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || '' }}
-  PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || '' }}
+  PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || github.event.inputs.PHRASEA_REFNAME || '' }}
+  PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || github.event.inputs.PHRASEA_REFTYPE || '' }}
+  PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || github.event.inputs.PHRASEA_DATETIME || '' }}
 
 jobs:
   build:
+    name: Build and Push Phrasea Documentation Image
     runs-on: ubuntu-latest
     environment: phrasea
 
