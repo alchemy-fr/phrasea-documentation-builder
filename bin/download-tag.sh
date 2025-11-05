@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 TAG=$1
 
@@ -20,12 +20,12 @@ fi
   ) \
   && cp -r ./tmpclone/doc ./$TAG/src/ \
   && rm -rf ./tmpclone \
-  for app in databox expose uploader; do \
+  && for app in databox expose uploader; do
     APP_IMAGE="public.ecr.aws/alchemyfr/ps-$app-api-php:$TAG"
-    mkdir -p ./$TAG/_generated/$app \
-    && docker pull ${APP_IMAGE} \
-    && IMAGE_ID=$(docker create ${APP_IMAGE}) \
-    && docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app || echo "No /srv/app/doc folder found in image $APP_IMAGE" \
-    && docker rm -v $IMAGE_ID
+    mkdir -p ./$TAG/_generated/$app
+    docker pull ${APP_IMAGE}
+    IMAGE_ID=$(docker create ${APP_IMAGE})
+    docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app || echo "No /srv/app/doc folder found in image $APP_IMAGE"
+    docker rm -v $IMAGE_ID
   done
 )
