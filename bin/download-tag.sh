@@ -12,7 +12,7 @@ fi
 
 function fetch_container() {
   local image=$1
-  local $pp=$2
+  local app=$2
 
   mkdir -p ./$TAG/_generated/$app
   docker pull ${image}
