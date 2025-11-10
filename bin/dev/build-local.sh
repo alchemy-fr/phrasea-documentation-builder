@@ -23,6 +23,9 @@ for dir in databox expose uploader; do
   cp -r "$PHRASEA_DIR/${dir}/api/doc" "${DEST}/_generated/${dir}/"
 done
 
+mkdir -p "${DEST}/_generated/configurator"
+cp -r "$PHRASEA_DIR/configurator/doc" "${DEST}/_generated/configurator/"
+
 export PHRASEA_REFTYPE=branch
 export PHRASEA_REFNAME=${TAG}
 export SITE_NAME="Phrasea Dev"
