@@ -33,7 +33,7 @@ FROM builder AS build-docs
 
 COPY --chown=app:app ./downloads /srv/downloads
 
-RUN ["php", "application.php", "-vvv", "build", "/srv/docusaurus/phrasea", "/srv/downloads"]
+RUN ["php", "application.php", "-vvv", "build"]
 
 FROM nginx:1.29.3-alpine3.22
 

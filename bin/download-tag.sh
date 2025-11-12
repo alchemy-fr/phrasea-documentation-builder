@@ -14,11 +14,16 @@ function fetch_container() {
   local image=$1
   local app=$2
 
-  mkdir -p ./$TAG/_generated/$app
   docker pull ${image}
-  IMAGE_ID=$(docker create ${image})
-  docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app || echo "No /srv/app/doc folder found in image $APP_IMAGE"
-  docker rm -v $IMAGE_ID
+  docker run --rm --entrypoint="" ${image} test -d /srv/app/doc
+  if [ "$?" -eq "0" ]; then
+    IMAGE_ID=$(docker create ${image})
+    mkdir -p ./$TAG/_generated/$app
+    docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app
+    docker rm -v $IMAGE_ID
+  else
+    echo "No /srv/app/doc folder found in image $image"
+  fi
 }
 
 (cd ./downloads \

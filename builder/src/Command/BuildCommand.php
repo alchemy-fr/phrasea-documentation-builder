@@ -18,6 +18,8 @@ use Symfony\Component\Yaml\Yaml;
 class BuildCommand extends Command
 {
     private const string NO_LOCALE = '_';
+    private const string DEFAULT_PROJECT_DIR = '/srv/docusaurus/phrasea';
+    private const string DEFAULT_DOC_DIR = '/srv/downloads';
     private Filesystem $filesystem;
 
     public function __construct(?string $name = null, ?Filesystem $filesystem = null)
@@ -30,8 +32,8 @@ class BuildCommand extends Command
     {
         parent::configure();
         $this
-            ->addArgument('docusaurus-project-dir', InputArgument::REQUIRED, 'Path to docusaurus project directory')
-            ->addArgument('doc-dir', InputArgument::REQUIRED, 'Path to directory where documentation versions are downloaded')
+            ->addArgument('docusaurus-project-dir', InputArgument::OPTIONAL, 'Path to docusaurus project directory', self::DEFAULT_PROJECT_DIR)
+            ->addArgument('doc-dir', InputArgument::OPTIONAL, 'Path to directory where documentation versions are downloaded', self::DEFAULT_DOC_DIR)
             ->setDescription('Build documentation with data fetched from phrasea image');
     }
 
@@ -71,40 +73,50 @@ class BuildCommand extends Command
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         foreach ($versions as $tag => $semver) {
-            $this->filesystem->remove($docDir . '/' . $tag . '/_merged');
+            $tagDir = $docDir.'/'.$tag;
+            $mergedDir = $tagDir.'/_merged';
+            if ($this->filesystem->exists($mergedDir)) {
+                $this->filesystem->remove($mergedDir);
+            }
 
             // list specific applications
             $apps = [];
-            $di2 = new \FilesystemIterator($docDir . '/' . $tag . '/_generated', \FilesystemIterator::SKIP_DOTS);
-            foreach ($di2 as $appDir) {
-                if ($appDir->isDir()) {
-                    $apps[] = $appDir->getFilename();
-                }
+            $generatedDir = $tagDir.'/_generated';
+            if (!$this->filesystem->exists($generatedDir)) {
+                $this->filesystem->mkdir($generatedDir);
             }
-
-            $this->filesystem->mirror(
-                $docDir . '/' . $tag . '/src/',
-                $docDir . '/' . $tag . '/_merged/'
-            );
-
-            foreach ($apps as $app) {
-                $originDir = $docDir.'/'.$tag.'/_generated/'.$app.'/doc';
-                if (!is_dir($originDir)) {
-                    continue;
+                $di2 = new \FilesystemIterator($generatedDir, \FilesystemIterator::SKIP_DOTS);
+                foreach ($di2 as $appDir) {
+                    if ($appDir->isDir()) {
+                        $apps[] = $appDir->getFilename();
+                    }
                 }
 
                 $this->filesystem->mirror(
-                    $originDir,
-                    $docDir . '/' . $tag . '/_merged/doc/_' . $app
+                    $tagDir. '/src',
+                    $mergedDir,
                 );
-                $output->writeln(sprintf(
-                    'Merged app "%s" to %s',
-                    $app,
-                    realpath($docDir . '/' . $tag . '/_merged/doc/_' . $app)
-                ));
-            }
 
-            $this->compileFiles($tag, $projectDir, $docDir . '/' . $tag . '/_merged/doc', $output);
+                foreach ($apps as $app) {
+                    $originDir = $generatedDir.'/'.$app.'/doc';
+                    if (!$this->filesystem->exists($originDir)) {
+                        continue;
+                    }
+
+                    $appDocDir = $mergedDir.'/doc/_'.$app;
+                    $this->filesystem->mirror(
+                        $originDir,
+                        $appDocDir
+                    );
+
+                    $output->writeln(sprintf(
+                        'Merged app "%s" to %s',
+                        $app,
+                        realpath($appDocDir)
+                    ));
+                }
+
+            $this->compileFiles($tag, $projectDir, $mergedDir.'/doc', $output);
 
             $this->runCommand(
                 ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
@@ -283,8 +295,7 @@ class BuildCommand extends Command
 
         // Create the API documentation from the JSON schema
         foreach ($apps as $app) {
-            $docDir = $projectDir . '/docs/' . $app . '_api';
-            if (!is_dir($docDir)) {
+            if (!$this->filesystem->exists($projectDir . '/docs/_' . $app.'/_schema.json')) {
                 continue;
             }
 
@@ -294,6 +305,7 @@ class BuildCommand extends Command
                 $output
             );
 
+            $docDir = $projectDir . '/docs/' . $app . '_api';
             // Fix API auto-generated sidebar (https://github.com/facebook/docusaurus/discussions/11458)
             $sideBarSrc = $docDir.'/sidebar.ts';
             $output->writeln(sprintf('Adding key props to %s', $sideBarSrc));
