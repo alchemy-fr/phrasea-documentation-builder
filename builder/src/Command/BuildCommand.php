@@ -88,8 +88,13 @@ class BuildCommand extends Command
             );
 
             foreach ($apps as $app) {
+                $originDir = $docDir.'/'.$tag.'/_generated/'.$app.'/doc';
+                if (!is_dir($originDir)) {
+                    continue;
+                }
+
                 $this->filesystem->mirror(
-                    $docDir . '/' . $tag . '/_generated/' . $app . '/doc/',
+                    $originDir,
                     $docDir . '/' . $tag . '/_merged/doc/_' . $app
                 );
                 $output->writeln(sprintf(
@@ -279,6 +284,9 @@ class BuildCommand extends Command
         // Create the API documentation from the JSON schema
         foreach ($apps as $app) {
             $docDir = $projectDir . '/docs/' . $app . '_api';
+            if (!is_dir($docDir)) {
+                continue;
+            }
 
             $this->runCommand(
                 ['pnpm', 'run', 'gen-api-docs', $app],
