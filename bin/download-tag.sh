@@ -14,7 +14,7 @@ function fetch_container() {
   local image=$1
   local app=$2
 
-  docker pull ${image}
+  docker pull ${image} || exit 1
   docker run --rm --entrypoint="" ${image} test -d /srv/app/doc
   if [ "$?" -eq "0" ]; then
     IMAGE_ID=$(docker create ${image})
