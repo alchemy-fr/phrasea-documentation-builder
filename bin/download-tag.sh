@@ -36,8 +36,10 @@ function fetch_container() {
   ) \
   && cp -r ./tmpclone/doc ./$TAG/src/ \
   && rm -rf ./tmpclone \
+  && aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws \
   && for app in databox expose uploader; do
     fetch_container "public.ecr.aws/alchemyfr/ps-$app-api-php:$TAG" $app
   done \
   && fetch_container "public.ecr.aws/alchemyfr/ps-configurator:$TAG" configurator
 )
+
