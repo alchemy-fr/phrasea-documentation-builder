@@ -67,12 +67,14 @@ class BuildCommand extends Command
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
 
-        $this->filesystem->remove($projectDir . '/docs');
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         foreach ($versions as $tag => $semver) {
+            $this->filesystem->remove($projectDir . '/docs');
+            $this->filesystem->mkdir($projectDir . '/docs', 0777);
+            
             $tagDir = $docDir.'/'.$tag;
             $mergedDir = $tagDir.'/_merged';
             if ($this->filesystem->exists($mergedDir)) {
