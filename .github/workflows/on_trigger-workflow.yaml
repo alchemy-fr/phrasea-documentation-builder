@@ -84,9 +84,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to AWS public ECR
+        id: login-ecr-public
         continue-on-error: true
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
 
       - name: Log in to Docker Hub
         if: ${{ env.PHRASEA_REFTYPE == 'tag' }}
@@ -113,7 +115,7 @@ jobs:
 
       - name: Build and Push image to AWS public ECR (branch)
         id: push_aws_branch
-        if: ${{ env.PHRASEA_REFTYPE == 'branch' }}
+        if: ${{ env.PHRASEA_REFTYPE == 'branch' && steps.login-ecr-public.outcome == 'success' }}
         continue-on-error: true
         uses: docker/build-push-action@v7
         with:
@@ -121,7 +123,7 @@ jobs:
           file: ./Dockerfile
           provenance: false
           push: true
-          tags: ${{ env.AWS_PUBLIC_ECR_IMAGE_REPOSITORY }}:${{ env.PHRASEA_REFNAME }}
+          tags: ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:${{ env.PHRASEA_REFNAME }}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
@@ -146,7 +148,7 @@ jobs:
 
       - name: Build and Push image to AWS public ECR (tag)
         id: push_aws_tag
-        if: ${{ env.PHRASEA_REFTYPE == 'tag' }}
+        if: ${{ env.PHRASEA_REFTYPE == 'tag' && steps.login-ecr-public.outcome == 'success' }}
         continue-on-error: true
         uses: docker/build-push-action@v7
         with:
@@ -155,8 +157,8 @@ jobs:
           provenance: false
           push: true
           tags: |
-            ${{ env.AWS_PUBLIC_ECR_IMAGE_REPOSITORY }}:${{ env.PHRASEA_REFNAME }}
-            ${{ env.AWS_PUBLIC_ECR_IMAGE_REPOSITORY }}:latest
+            ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:${{ env.PHRASEA_REFNAME }}
+            ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:latest
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
