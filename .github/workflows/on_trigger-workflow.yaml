@@ -19,7 +19,9 @@ on:
         default: ''
 
 env:
-  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  GHCR_IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/phrasea-documentation
+  AWS_PUBLIC_ECR_IMAGE_REPOSITORY: public.ecr.aws/alchemyfr/ps-documentation
+  DOCKERHUB_IMAGE_REPOSITORY: docker.io/alchemyfr/ps-documentation
   PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || github.event.inputs.PHRASEA_REFNAME || '' }}
   PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || github.event.inputs.PHRASEA_REFTYPE || '' }}
   PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || github.event.inputs.PHRASEA_DATETIME || '' }}
@@ -74,37 +76,117 @@ jobs:
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
 
-      - name: Log in to the Container registry
+      - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
-          registry: ${{ env.IMAGE_REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push image of single version
-        if: ${{env.PHRASEA_REFTYPE == 'branch'}}
+      - name: Log in to AWS public ECR
+        id: login-ecr-public
+        continue-on-error: true
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Log in to Docker Hub
+        if: ${{ env.PHRASEA_REFTYPE == 'tag' }}
+        uses: docker/login-action@v4
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and Push image to GHCR (branch)
+        id: push_ghcr_branch
+        if: ${{ env.PHRASEA_REFTYPE == 'branch' }}
         uses: docker/build-push-action@v7
         with:
           context: ./
           file: ./Dockerfile
           provenance: false
           push: true
-          tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}}
+          tags: ${{ env.GHCR_IMAGE_REPOSITORY }}:${{ env.PHRASEA_REFNAME }}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
 
-      - name: Build and Push image of all versions
-        if: ${{env.PHRASEA_REFTYPE == 'tag'}}
+      - name: Build and Push image to AWS public ECR (branch)
+        id: push_aws_branch
+        if: ${{ env.PHRASEA_REFTYPE == 'branch' && steps.login-ecr-public.outcome == 'success' }}
+        continue-on-error: true
         uses: docker/build-push-action@v7
         with:
           context: ./
           file: ./Dockerfile
           provenance: false
           push: true
-          tags: ${{ env.IMAGE_REGISTRY }}/phrasea-documentation:${{env.PHRASEA_REFNAME}},${{ env.IMAGE_REGISTRY }}/phrasea-documentation:latest
+          tags: ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:${{ env.PHRASEA_REFNAME }}
           build-args: |
             PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+
+      - name: Build and Push image to GHCR (tag)
+        id: push_ghcr_tag
+        if: ${{ env.PHRASEA_REFTYPE == 'tag' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ./
+          file: ./Dockerfile
+          provenance: false
+          push: true
+          tags: |
+            ${{ env.GHCR_IMAGE_REPOSITORY }}:${{ env.PHRASEA_REFNAME }}
+            ${{ env.GHCR_IMAGE_REPOSITORY }}:latest
+          build-args: |
+            PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
+            PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
+            PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+
+      - name: Build and Push image to AWS public ECR (tag)
+        id: push_aws_tag
+        if: ${{ env.PHRASEA_REFTYPE == 'tag' && steps.login-ecr-public.outcome == 'success' }}
+        continue-on-error: true
+        uses: docker/build-push-action@v7
+        with:
+          context: ./
+          file: ./Dockerfile
+          provenance: false
+          push: true
+          tags: |
+            ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:${{ env.PHRASEA_REFNAME }}
+            ${{ steps.login-ecr-public.outputs.registry }}/alchemyfr/ps-documentation:latest
+          build-args: |
+            PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
+            PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
+            PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+
+      - name: Build and Push image to Docker Hub (tag)
+        id: push_dockerhub_tag
+        if: ${{ env.PHRASEA_REFTYPE == 'tag' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ./
+          file: ./Dockerfile
+          provenance: false
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_IMAGE_REPOSITORY }}:${{ env.PHRASEA_REFNAME }}
+            ${{ env.DOCKERHUB_IMAGE_REPOSITORY }}:latest
+          build-args: |
+            PHRASEA_REFNAME=${{ env.PHRASEA_REFNAME }}
+            PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
+            PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
+
+      - name: Print push summary
+        if: ${{ always() }}
+        run: |
+          echo "Push summary"
+          echo "GHCR branch outcome: ${{ steps.push_ghcr_branch.outcome || 'n/a' }}"
+          echo "AWS branch outcome: ${{ steps.push_aws_branch.outcome || 'n/a' }}"
+          echo "GHCR tag outcome: ${{ steps.push_ghcr_tag.outcome || 'n/a' }}"
+          echo "AWS tag outcome: ${{ steps.push_aws_tag.outcome || 'n/a' }}"
+          echo "Docker Hub tag outcome: ${{ steps.push_dockerhub_tag.outcome || 'n/a' }}"
