@@ -67,26 +67,39 @@ class BuildCommand extends Command
             return $a->eq($b) ? 0 : ($a->gt($b) ? 1 : -1);
         });
 
+        $strictMode = filter_var(getenv('DOCS_BUILD_STRICT') ?: 'false', FILTER_VALIDATE_BOOL);
+        $triggerTag = getenv('PHRASEA_REFNAME') ?: null;
+        $latestTag = $this->getLatestTag($versions);
+
+        $output->writeln(sprintf('DOCS_BUILD_STRICT=%s', $strictMode ? 'true' : 'false'));
+        $output->writeln(sprintf('Latest detected version=%s', $latestTag ?? 'n/a'));
+
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
-        foreach ($versions as $tag => $semver) {
-            $this->filesystem->remove($projectDir . '/docs');
-            $this->filesystem->mkdir($projectDir . '/docs', 0777);
-            
-            $tagDir = $docDir.'/'.$tag;
-            $mergedDir = $tagDir.'/_merged';
-            if ($this->filesystem->exists($mergedDir)) {
-                $this->filesystem->remove($mergedDir);
-            }
+        $built = [];
+        $skipped = [];
 
-            // list specific applications
-            $apps = [];
-            $generatedDir = $tagDir.'/_generated';
-            if (!$this->filesystem->exists($generatedDir)) {
-                $this->filesystem->mkdir($generatedDir);
-            }
+        foreach ($versions as $tag => $semver) {
+            $isCritical = $strictMode || $this->isCriticalTag($tag, $triggerTag, $latestTag);
+
+            try {
+                $this->filesystem->remove($projectDir . '/docs');
+                $this->filesystem->mkdir($projectDir . '/docs', 0777);
+
+                $tagDir = $docDir.'/'.$tag;
+                $mergedDir = $tagDir.'/_merged';
+                if ($this->filesystem->exists($mergedDir)) {
+                    $this->filesystem->remove($mergedDir);
+                }
+
+                // list specific applications
+                $apps = [];
+                $generatedDir = $tagDir.'/_generated';
+                if (!$this->filesystem->exists($generatedDir)) {
+                    $this->filesystem->mkdir($generatedDir);
+                }
                 $di2 = new \FilesystemIterator($generatedDir, \FilesystemIterator::SKIP_DOTS);
                 foreach ($di2 as $appDir) {
                     if ($appDir->isDir()) {
@@ -118,13 +131,40 @@ class BuildCommand extends Command
                     ));
                 }
 
-            $this->compileFiles($tag, $projectDir, $mergedDir.'/doc', $output);
+                $this->compileFiles($tag, $projectDir, $mergedDir.'/doc', $output);
 
-            $this->runCommand(
-                ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
-                $projectDir,
-                $output
-            );
+                $this->runCommand(
+                    ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
+                    $projectDir,
+                    $output
+                );
+
+                $built[] = $tag;
+                $output->writeln(sprintf('<info>Version %s built successfully.</info>', $tag));
+            } catch (\Throwable $e) {
+                $reason = sprintf('%s: %s', $e::class, $e->getMessage());
+                if ($isCritical) {
+                    $this->printBuildSummary($output, $built, $skipped, [
+                        ['tag' => $tag, 'critical' => true, 'reason' => $reason],
+                    ]);
+
+                    throw $e;
+                }
+
+                $skipped[] = [
+                    'tag' => $tag,
+                    'critical' => false,
+                    'reason' => $reason,
+                ];
+
+                $output->writeln(sprintf('<comment>Skipping non-critical version %s (%s)</comment>', $tag, $reason));
+            }
+        }
+
+        $this->printBuildSummary($output, $built, $skipped, []);
+
+        if (empty($built)) {
+            throw new \RuntimeException('No version could be built successfully.');
         }
 
         $originalConfig = file_get_contents($projectDir . '/docusaurus.config.ts');
@@ -132,6 +172,12 @@ class BuildCommand extends Command
         file_put_contents($projectDir . '/docusaurus.config.ts', $patchedConfig);
 
         try {
+            if (!$strictMode) {
+                $this->createMissingImportedMarkdownFiles($projectDir, $output);
+            } else {
+                $output->writeln('<info>Prebuild placeholders disabled because DOCS_BUILD_STRICT=true.</info>');
+            }
+
             $this->filesystem->mkdir($projectDir . '/build');
             $process = $this->runCommand(
                 ['pnpm', 'run', 'build'],
@@ -189,6 +235,128 @@ class BuildCommand extends Command
         }
 
         return $process;
+    }
+
+    private function getLatestTag(array $versions): ?string
+    {
+        $latestTag = null;
+        foreach ($versions as $tag => $version) {
+            if ($version !== null) {
+                $latestTag = $tag;
+            }
+        }
+
+        return $latestTag;
+    }
+
+    private function isCriticalTag(string $tag, ?string $triggerTag, ?string $latestTag): bool
+    {
+        return ($triggerTag !== null && $tag === $triggerTag)
+            || ($latestTag !== null && $tag === $latestTag);
+    }
+
+    private function printBuildSummary(OutputInterface $output, array $built, array $skipped, array $failed): void
+    {
+        $output->writeln('');
+        $output->writeln('<info>Build summary</info>');
+        $output->writeln(sprintf('Built versions: %d', count($built)));
+        foreach ($built as $tag) {
+            $output->writeln(sprintf(' - built: %s', $tag));
+        }
+
+        $output->writeln(sprintf('Skipped versions: %d', count($skipped)));
+        foreach ($skipped as $entry) {
+            $output->writeln(sprintf(' - skipped: %s (%s)', $entry['tag'], $entry['reason']));
+        }
+
+        $output->writeln(sprintf('Failed critical versions: %d', count($failed)));
+        foreach ($failed as $entry) {
+            $output->writeln(sprintf(' - failed: %s (%s)', $entry['tag'], $entry['reason']));
+        }
+    }
+
+    private function createMissingImportedMarkdownFiles(string $projectDir, OutputInterface $output): void
+    {
+        $versionedDocsDir = $projectDir . '/versioned_docs';
+        if (!$this->filesystem->exists($versionedDocsDir)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($versionedDocsDir, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        $created = [];
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+
+            $extension = strtolower($file->getExtension());
+            if (!in_array($extension, ['md', 'mdx'], true)) {
+                continue;
+            }
+
+            $content = $this->filesystem->readFile($file->getPathname());
+            if (!preg_match_all('/^\s*import\s+.+?\s+from\s+[\"\']([^\"\']+\.(?:md|mdx))[\"\'];?\s*$/m', $content, $matches)) {
+                continue;
+            }
+
+            foreach ($matches[1] as $importPath) {
+                // Only resolve relative imports used inside docs content.
+                if (!str_starts_with($importPath, './') && !str_starts_with($importPath, '../')) {
+                    continue;
+                }
+
+                $resolvedPath = $this->normalizePath(dirname($file->getPathname()) . '/' . $importPath);
+                $projectRoot = rtrim($projectDir, '/');
+                if (!str_starts_with($resolvedPath, $projectRoot . '/')) {
+                    continue;
+                }
+
+                if ($this->filesystem->exists($resolvedPath)) {
+                    continue;
+                }
+
+                $this->filesystem->mkdir(dirname($resolvedPath));
+                $this->filesystem->dumpFile(
+                    $resolvedPath,
+                    "# Missing generated documentation\n\nThis placeholder was auto-generated during prebuild to satisfy a legacy relative import.\n"
+                );
+                $created[] = $resolvedPath;
+            }
+        }
+
+        if (!empty($created)) {
+            $output->writeln(sprintf('<comment>Prebuild: created %d placeholder file(s) for missing MD/MDX imports.</comment>', count($created)));
+            foreach ($created as $path) {
+                $output->writeln(sprintf('<comment> - %s</comment>', $path));
+            }
+        }
+    }
+
+    private function normalizePath(string $path): string
+    {
+        $isAbsolute = str_starts_with($path, '/');
+        $parts = explode('/', $path);
+        $normalized = [];
+
+        foreach ($parts as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part === '..') {
+                if (!empty($normalized)) {
+                    array_pop($normalized);
+                }
+                continue;
+            }
+
+            $normalized[] = $part;
+        }
+
+        return ($isAbsolute ? '/' : '') . implode('/', $normalized);
     }
 
     private function compileFiles(string $tag, string $projectDir, string $dir, OutputInterface $output): void
