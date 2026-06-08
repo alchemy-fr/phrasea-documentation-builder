@@ -9,5 +9,7 @@ services:
           - PHRASEA_DATETIME=${PHRASEA_DATETIME}
           - SITE_NAME=${SITE_NAME}
           - SITE_URL=${SITE_URL}
+          - DOCS_BUILD_STRICT=${DOCS_BUILD_STRICT}
+          - NODE_OPTIONS=${NODE_OPTIONS}
     ports:
       - "${SITE_PORT}:80"

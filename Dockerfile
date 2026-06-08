@@ -5,6 +5,10 @@ ARG PHRASEA_REFTYPE
 ARG PHRASEA_DATETIME
 ARG SITE_NAME="Phrasea Documentation"
 ARG SITE_URL="https://doc.phrasea.com"
+ARG DOCS_BUILD_STRICT="false"
+ARG NODE_OPTIONS="--max-old-space-size=6144"
+
+ENV NODE_OPTIONS=${NODE_OPTIONS}
 
 RUN apk add --no-interactive \
         git \
@@ -30,6 +34,12 @@ COPY --chown=app:app ./builder /srv/builder
 RUN composer install --no-dev --optimize-autoloader
 
 FROM builder AS build-docs
+
+ARG DOCS_BUILD_STRICT="false"
+ARG NODE_OPTIONS="--max-old-space-size=6144"
+
+ENV DOCS_BUILD_STRICT=${DOCS_BUILD_STRICT}
+ENV NODE_OPTIONS=${NODE_OPTIONS}
 
 COPY --chown=app:app ./downloads /srv/downloads
 

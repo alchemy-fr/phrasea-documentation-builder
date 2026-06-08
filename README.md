@@ -81,8 +81,11 @@ Variables are defined by https://github.com/alchemy-fr/phrasea-documentation-bui
 
 - `MIN_VERSION` The minimum phrasea version to include, e.g. `3.12.5`
 - `VERSIONS_COUNT` The maximum number of versions to include on "releases" documentation.
+- `DOCS_BUILD_STRICT` Controls strict mode for the documentation build (`true` or `false`, default: `false`).
+  - `true`: prebuild placeholders are disabled and any missing imported markdown/MDX dependency can fail the final build.
+  - `false`: prebuild placeholders are enabled to tolerate missing imported markdown/MDX dependencies before `pnpm run build`.
 
-e.g. `MIN_VERSION=1.1.2` ; `VERSIONS_COUNT=3`
+e.g. `MIN_VERSION=1.1.2` ; `VERSIONS_COUNT=3` ; `DOCS_BUILD_STRICT=false`
 
 ~~1.0.0~~  
 ~~1.1.0 ; 1.1.1 ;~~ 1.1.2 ; 1.1.5  
