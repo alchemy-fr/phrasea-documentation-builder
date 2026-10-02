@@ -25,7 +25,7 @@ env:
   PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || github.event.inputs.PHRASEA_REFNAME || '' }}
   PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || github.event.inputs.PHRASEA_REFTYPE || '' }}
   PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || github.event.inputs.PHRASEA_DATETIME || '' }}
-  NODE_OPTIONS: ${{ vars.NODE_OPTIONS || '--max-old-space-size=8192' }}
+  NODE_OPTIONS: ${{ vars.NODE_OPTIONS || '--max-old-space-size=16384' }}
 
 jobs:
   build:
