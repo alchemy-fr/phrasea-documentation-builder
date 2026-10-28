@@ -17,6 +17,14 @@ on:
         description: 'The datetime of phrasea build'
         required: false
         default: ''
+      PHRASEA_IMAGE_REGISTRY:
+        description: 'Branch only: the registry of the phrasea images (e.g. "ghcr.io/alchemy-fr"), defaults to the public ECR'
+        required: false
+        default: ''
+      PHRASEA_IMAGE_TAG:
+        description: 'Branch only: the tag of the phrasea images (e.g. the commit sha on GHCR), defaults to the ref name'
+        required: false
+        default: ''
 
 env:
   GHCR_IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/phrasea-documentation
@@ -25,6 +33,8 @@ env:
   PHRASEA_REFNAME: ${{ github.event.client_payload.PHRASEA_REFNAME || github.event.inputs.PHRASEA_REFNAME || '' }}
   PHRASEA_REFTYPE: ${{ github.event.client_payload.PHRASEA_REFTYPE || github.event.inputs.PHRASEA_REFTYPE || '' }}
   PHRASEA_DATETIME: ${{ github.event.client_payload.PHRASEA_DATETIME || github.event.inputs.PHRASEA_DATETIME || '' }}
+  PHRASEA_IMAGE_REGISTRY: ${{ github.event.client_payload.PHRASEA_IMAGE_REGISTRY || github.event.inputs.PHRASEA_IMAGE_REGISTRY || '' }}
+  PHRASEA_IMAGE_TAG: ${{ github.event.client_payload.PHRASEA_IMAGE_TAG || github.event.inputs.PHRASEA_IMAGE_TAG || '' }}
   NODE_OPTIONS: ${{ vars.NODE_OPTIONS || '--max-old-space-size=16384' }}
 
 jobs:
@@ -50,7 +60,7 @@ jobs:
       - name: List and Pull single image
         if: ${{env.PHRASEA_REFTYPE == 'branch'}}
         run: |
-          ./bin/download-tag.sh "${{env.PHRASEA_REFNAME}}"
+          ./bin/download-tag.sh "${{env.PHRASEA_REFNAME}}" "${{env.PHRASEA_IMAGE_TAG}}" "${{env.PHRASEA_IMAGE_REGISTRY}}"
 
       # If workflow runs because a release, prepare all x.y.z versions of documentation
       - name: List and Pull all images from releases

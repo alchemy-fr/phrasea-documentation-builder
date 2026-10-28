@@ -41,10 +41,10 @@ To translate a file `foobar.md` (default locale='en') to french, create `foobar.
 
 By default, for the "chapters" navigation tree (left sidebar), directory names used.
 
-To translate a chapter label (or to give it a friendly english name), add a `_locales.yaml` **in** the directory:
+To translate a chapter label (or to give it a friendly english name), add a `_locales.yml` **in** the directory (`.yml`, not `.yaml`):
 
 ```yaml
-# /doc/tech/storage/_locales.yaml
+# /doc/tech/storage/_locales.yml
 fr: Stockage
 en: Storage
 ```
@@ -72,9 +72,25 @@ Documentation is generated when:
     
     The image is tagged `X.Y.Z` and `latest`
 
-- A **push** on a phrasea branch and the last commit message contains `[documentation]`
+- A **push** on any phrasea branch, when one of the pushed commit messages contains `[documentation]` (brackets included)
 
     The image is tagged with the name of the branch, e.g. `"PS-xxx_my-doc-update"`
+
+The trigger lives in phrasea's workflows, which send a `repository_dispatch` to this repository:
+
+- `next`, `master` and `release/**`: `ci.yaml`, at the end of the `setup` job, once all the images are built, tested and pushed.
+  If a step fails (tests included), the documentation is not built. `pull_request`, `schedule` and manual runs never build it.
+- any other branch: `documentation.yaml`, which builds only the `databox`, `expose` and `uploader` `api-php` images and the `configurator`
+  (the ones holding `/srv/app/doc`) and triggers this builder with `PHRASEA_IMAGE_REGISTRY=ghcr.io/alchemy-fr` and `PHRASEA_IMAGE_TAG=<commit sha>`:
+  the images are read from GHCR, the build cache, and never reach the public registries since they are not tested.
+  It can also be run manually from the Actions tab (once the workflow exists on the default branch).
+- tags: `release.yaml`.
+
+Without `PHRASEA_IMAGE_REGISTRY`/`PHRASEA_IMAGE_TAG`, `bin/download-tag.sh` reads the public ECR images tagged with the ref name.
+
+A branch name holding a `/` is not supported yet: `bin/download-tag.sh` refuses it, and the documentation image is tagged with the ref name.
+
+See phrasea's `doc/tech/Development/ci.md` (Commit markers).
 
 
 Variables are defined by https://github.com/alchemy-fr/phrasea-documentation-builder/settings/environments

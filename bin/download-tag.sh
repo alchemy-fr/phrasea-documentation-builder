@@ -3,6 +3,11 @@
 set -ex
 
 TAG=$1
+# The phrasea images to read /srv/app/doc from: the public ECR images tagged
+# with the ref by default, or e.g. the GHCR build images of a work branch
+# (ghcr.io/alchemy-fr + the commit sha), which never reach a public registry.
+IMAGE_TAG=${2:-$TAG}
+IMAGE_REGISTRY=${3:-public.ecr.aws/alchemyfr}
 
 # Checks TAG dos not contain slashes or spaces
 if [[ "$TAG" =~ [\ /] ]]; then
@@ -36,10 +41,12 @@ function fetch_container() {
   ) \
   && cp -r ./tmpclone/doc ./$TAG/src/ \
   && rm -rf ./tmpclone \
-  && aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws \
+  && if [[ "$IMAGE_REGISTRY" == public.ecr.aws/* ]]; then
+    aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+  fi \
   && for app in databox expose uploader; do
-    fetch_container "public.ecr.aws/alchemyfr/ps-$app-api-php:$TAG" $app
+    fetch_container "$IMAGE_REGISTRY/ps-$app-api-php:$IMAGE_TAG" $app
   done \
-  && fetch_container "public.ecr.aws/alchemyfr/ps-configurator:$TAG" configurator
+  && fetch_container "$IMAGE_REGISTRY/ps-configurator:$IMAGE_TAG" configurator
 )
 
