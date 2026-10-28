@@ -487,29 +487,34 @@ class BuildCommand extends Command
             );
             $this->filesystem->dumpFile(
                 $sideBarSrc,
-                preg_replace_callback(
-                    '/\Wid:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
-                    function (array $regs) use ($app) {
-                        return sprintf(
-                            'id:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
-                            $regs[1],
-                            $regs[2],
-                            $regs[3],
-                            $app,
-                        );
-                    },
+                // A category link (to its tag page) does not accept a key
+                preg_replace(
+                    '/(link:\s*\{\s*type:\s*(["\'])doc\2\s*,\s*id:(["\'])(?:(?!\3).)*\3), key:\3(?:(?!\3).)*\3/m',
+                    '$1',
                     preg_replace_callback(
-                        '/type:\s*"category"\s*,\s*label:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
+                        '/\Wid:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
                         function (array $regs) use ($app) {
                             return sprintf(
-                                'type: "category", label:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                                'id:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
                                 $regs[1],
                                 $regs[2],
                                 $regs[3],
                                 $app,
                             );
                         },
-                        $this->filesystem->readFile($sideBarSrc)
+                        preg_replace_callback(
+                            '/type:\s*"category"\s*,\s*label:\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)/m',
+                            function (array $regs) use ($app) {
+                                return sprintf(
+                                    'type: "category", label:%1$s%2$s%3$s, key:%1$s%4$s_%2$s_%3$s',
+                                    $regs[1],
+                                    $regs[2],
+                                    $regs[3],
+                                    $app,
+                                );
+                            },
+                            $this->filesystem->readFile($sideBarSrc)
+                        )
                     )
                 )
             );
