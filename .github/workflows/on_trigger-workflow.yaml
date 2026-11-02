@@ -61,21 +61,23 @@ jobs:
       - name: List and Pull single image
         if: ${{env.PHRASEA_REFTYPE == 'branch'}}
         run: |
-          ./bin/download-tag.sh "${{env.PHRASEA_REFNAME}}" "${{env.PHRASEA_IMAGE_TAG}}" "${{env.PHRASEA_IMAGE_REGISTRY}}"
+          ./bin/download-tag.sh "$PHRASEA_REFNAME" "$PHRASEA_IMAGE_TAG" "$PHRASEA_IMAGE_REGISTRY"
 
       # If workflow runs because a release, prepare all x.y.z versions of documentation
       - name: List and Pull all images from releases
         if: ${{env.PHRASEA_REFTYPE == 'tag'}}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MIN_VERSION: ${{ vars.MIN_VERSION }}
+          VERSIONS_COUNT: ${{ vars.VERSIONS_COUNT }}
         run: |
           set -o pipefail
           echo "Fetching tags from github:phrasea releases"
-          MIN_VERSION=$(echo '"'${{vars.MIN_VERSION}}'"' | jq '. | split(".") | map(. | tonumber) | .[0]*1000000 + .[1]*1000 + .[2]')
+          MIN_VERSION=$(jq -n --arg v "$MIN_VERSION" '$v | split(".") | map(. | tonumber) | .[0]*1000000 + .[1]*1000 + .[2]')
           # Fetch the published x.y.z releases, every page
           gh api --paginate repos/alchemy-fr/phrasea/releases \
             --jq '.[] | select((.draft or .prerelease | not) and (.tag_name | test("^v?[0-9]+\\.[0-9]+\\.[0-9]+$")))' \
-            | jq -s -c '[.[]] | map({"tag": .tag_name | split(".") | {major: .[0]|gsub("[^0-9]"; "")|tonumber, minor: .[1]|gsub("[^0-9]"; "")|tonumber, patch: .[2]|gsub("[^0-9]"; "")|tonumber, full: join(".")}, "all": .}) | map({"tag":(.tag + {"v":(.tag.major*1000000 + .tag.minor*1000 + .tag.patch)}), "all": .all }) | group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch)) | map(select(.tag.v >= '${MIN_VERSION}')) | reverse | .[0:'${{vars.VERSIONS_COUNT}}'] | reverse' > releases.json
+            | jq -s -c --arg min "$MIN_VERSION" --arg count "$VERSIONS_COUNT" '[.[]] | map({"tag": .tag_name | split(".") | {major: .[0]|gsub("[^0-9]"; "")|tonumber, minor: .[1]|gsub("[^0-9]"; "")|tonumber, patch: .[2]|gsub("[^0-9]"; "")|tonumber, full: join(".")}, "all": .}) | map({"tag":(.tag + {"v":(.tag.major*1000000 + .tag.minor*1000 + .tag.patch)}), "all": .all }) | group_by(.tag.major, .tag.minor) | map(max_by(.tag.patch)) | map(select(.tag.v >= ($min | tonumber))) | reverse | .[0:($count | tonumber)] | reverse' > releases.json
           # Loop through releases
           cat releases.json | jq -r '.[] | .all.tag_name' | while read -r tag_name; do
             ./bin/download-tag.sh "$tag_name"
