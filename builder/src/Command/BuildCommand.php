@@ -76,6 +76,7 @@ class BuildCommand extends Command
 
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
+        $this->filesystem->remove($projectDir . '/i18n');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $built = [];
@@ -87,6 +88,11 @@ class BuildCommand extends Command
             try {
                 $this->filesystem->remove($projectDir . '/docs');
                 $this->filesystem->mkdir($projectDir . '/docs', 0777);
+                // docs:version snapshots the current translations of every locale, they must not leak from the previous version
+                $this->filesystem->remove(array_merge(
+                    glob($projectDir . '/i18n/*/docusaurus-plugin-content-docs/current') ?: [],
+                    glob($projectDir . '/i18n/*/docusaurus-plugin-content-docs/current.json') ?: [],
+                ));
 
                 $tagDir = $docDir.'/'.$tag;
                 $mergedDir = $tagDir.'/_merged';
