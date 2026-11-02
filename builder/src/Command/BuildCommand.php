@@ -18,6 +18,9 @@ use Symfony\Component\Yaml\Yaml;
 class BuildCommand extends Command
 {
     private const string NO_LOCALE = '_';
+    private const string DEFAULT_LOCALE = 'en';
+    // The i18n.locales of docusaurus.config.ts
+    private const array LOCALES = [self::DEFAULT_LOCALE, 'fr'];
     private const string DEFAULT_PROJECT_DIR = '/srv/docusaurus/phrasea';
     private const string DEFAULT_DOC_DIR = '/srv/downloads';
     private Filesystem $filesystem;
@@ -386,17 +389,14 @@ class BuildCommand extends Command
                         continue;
                     }
 
-                    // remove extension
-                    $dotExtension = $file->getExtension() ? ('.' . $file->getExtension()) : '';
-                    $bn = $file->getBasename($dotExtension);
+                    $filename = $file->getFilename();
                     $locale = self::NO_LOCALE;
-                    // find locale?
+                    // find locale, e.g. "foobar.fr.md"
                     $matches = [];
-                    if (preg_match('/(.*)\.(\w*)/', $bn, $matches) && count($matches) === 3) {
-                        $bn = $matches[1];
-                        $locale = $matches[2];
-                        if ($locale === 'en') {
-                            $locale = self::NO_LOCALE; // no locale for en
+                    if (preg_match('/^(.+)\.('.implode('|', self::LOCALES).')(\.[^.]+)$/', $filename, $matches)) {
+                        $filename = $matches[1].$matches[3];
+                        if ($matches[2] !== self::DEFAULT_LOCALE) {
+                            $locale = $matches[2];
                         }
                     }
 
@@ -410,11 +410,11 @@ class BuildCommand extends Command
                         $tab,
                         $file->getFilename(),
                         $subTargetDir,
-                        $bn . $dotExtension
+                        $filename
                     ));
                     $targetDir = $projectDir . '/' . $subTargetDir;
                     $this->filesystem->mkdir($targetDir, 0777);
-                    $destination = $targetDir.'/'.$bn.$dotExtension;
+                    $destination = $targetDir.'/'.$filename;
 
                     $this->filesystem->dumpFile(
                         $destination,
