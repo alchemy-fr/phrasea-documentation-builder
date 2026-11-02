@@ -207,19 +207,19 @@ class BuildCommand extends Command
             );
             file_put_contents(
                 $projectDir . '/build/build.html',
-                '<html lang="en"><pre>'.$process->getOutput().'</pre></html>'
+                '<html lang="en"><pre>'.htmlspecialchars($process->getOutput()).'</pre></html>'
             );
             file_put_contents(
                 $projectDir . '/build/build-error.html',
-                '<html lang="en"><pre>'.$process->getErrorOutput().'</pre></html>'
+                '<html lang="en"><pre>'.htmlspecialchars($process->getErrorOutput()).'</pre></html>'
             );
             file_put_contents(
                 $projectDir . '/build/version.html',
                 sprintf(
-                    '<html lang="en"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>',
-                    getenv('PHRASEA_REFNAME'),
-                    getenv('PHRASEA_REFTYPE'),
-                    getenv('PHRASEA_DATETIME')
+                    "<html lang=\"en\"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>",
+                    htmlspecialchars((string) getenv('PHRASEA_REFNAME')),
+                    htmlspecialchars((string) getenv('PHRASEA_REFTYPE')),
+                    htmlspecialchars((string) getenv('PHRASEA_DATETIME'))
                 )
             );
 
