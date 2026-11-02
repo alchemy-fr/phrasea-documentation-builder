@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -exo pipefail
 
 TAG=$1
 # The phrasea images to read /srv/app/doc from: the public ECR images tagged
@@ -19,34 +19,32 @@ function fetch_container() {
   local image=$1
   local app=$2
 
-  docker pull ${image} || exit 1
-  docker run --rm --entrypoint="" ${image} test -d /srv/app/doc
-  if [ "$?" -eq "0" ]; then
-    IMAGE_ID=$(docker create ${image})
-    mkdir -p ./$TAG/_generated/$app
-    docker cp $IMAGE_ID:/srv/app/doc ./$TAG/_generated/$app
-    docker rm -v $IMAGE_ID
+  docker pull "$image"
+  if docker run --rm --entrypoint="" "$image" test -d /srv/app/doc; then
+    IMAGE_ID=$(docker create "$image")
+    mkdir -p "./$TAG/_generated/$app"
+    docker cp "$IMAGE_ID:/srv/app/doc" "./$TAG/_generated/$app"
+    docker rm -v "$IMAGE_ID"
   else
     echo "No /srv/app/doc folder found in image $image"
   fi
 }
 
-(cd ./downloads \
-  && rm -rf ./tmpclone \
-  && mkdir -p ./$TAG/src \
-  && git clone --filter=blob:none --no-checkout https://github.com/alchemy-fr/phrasea.git ./tmpclone \
-  && (cd ./tmpclone \
-    && git fetch origin \
-    && git checkout $TAG \
-  ) \
-  && cp -r ./tmpclone/doc ./$TAG/src/ \
-  && rm -rf ./tmpclone \
-  && if [[ "$IMAGE_REGISTRY" == public.ecr.aws/* ]]; then
-    aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-  fi \
-  && for app in databox expose uploader; do
-    fetch_container "$IMAGE_REGISTRY/ps-$app-api-php:$IMAGE_TAG" $app
-  done \
-  && fetch_container "$IMAGE_REGISTRY/ps-configurator:$IMAGE_TAG" configurator
-)
+cd ./downloads
 
+rm -rf ./tmpclone
+mkdir -p "./$TAG/src"
+git clone --filter=blob:none --no-checkout https://github.com/alchemy-fr/phrasea.git ./tmpclone
+git -C ./tmpclone fetch origin
+git -C ./tmpclone checkout "$TAG"
+cp -r ./tmpclone/doc "./$TAG/src/"
+rm -rf ./tmpclone
+
+if [[ "$IMAGE_REGISTRY" == public.ecr.aws/* ]]; then
+  aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+fi
+
+for app in databox expose uploader; do
+  fetch_container "$IMAGE_REGISTRY/ps-$app-api-php:$IMAGE_TAG" "$app"
+done
+fetch_container "$IMAGE_REGISTRY/ps-configurator:$IMAGE_TAG" configurator
