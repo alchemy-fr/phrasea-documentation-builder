@@ -142,11 +142,22 @@ class BuildCommand extends Command
 
                 $this->compileFiles($tag, $projectDir, $mergedDir.'/doc', $output);
 
+                $versionName = $semver ? ($semver->major . '.' . $semver->minor) : $tag;
                 $this->runCommand(
-                    ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
+                    ['pnpm', 'run', 'docusaurus', 'docs:version', $versionName],
                     $projectDir,
                     $output
                 );
+
+                // docs:version copies current.json to version-<name>.json for the other locales only
+                $defaultLocaleTranslations = $projectDir . '/i18n/' . self::DEFAULT_LOCALE . '/docusaurus-plugin-content-docs';
+                if ($this->filesystem->exists($defaultLocaleTranslations . '/current.json')) {
+                    $this->filesystem->copy(
+                        $defaultLocaleTranslations . '/current.json',
+                        $defaultLocaleTranslations . '/version-' . $versionName . '.json',
+                        true
+                    );
+                }
 
                 $built[] = $tag;
                 $output->writeln(sprintf('<info>Version %s built successfully.</info>', $tag));
