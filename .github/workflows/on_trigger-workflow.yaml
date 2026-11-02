@@ -36,6 +36,7 @@ env:
   PHRASEA_IMAGE_REGISTRY: ${{ github.event.client_payload.PHRASEA_IMAGE_REGISTRY || github.event.inputs.PHRASEA_IMAGE_REGISTRY || '' }}
   PHRASEA_IMAGE_TAG: ${{ github.event.client_payload.PHRASEA_IMAGE_TAG || github.event.inputs.PHRASEA_IMAGE_TAG || '' }}
   NODE_OPTIONS: ${{ vars.NODE_OPTIONS || '--max-old-space-size=16384' }}
+  DOCS_BUILD_STRICT: ${{ vars.DOCS_BUILD_STRICT || 'false' }}
 
 jobs:
   build:
@@ -124,6 +125,7 @@ jobs:
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
             NODE_OPTIONS=${{ env.NODE_OPTIONS }}
+            DOCS_BUILD_STRICT=${{ env.DOCS_BUILD_STRICT }}
 
       - name: Build and Push image to AWS public ECR (branch)
         id: push_aws_branch
@@ -141,6 +143,7 @@ jobs:
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
             NODE_OPTIONS=${{ env.NODE_OPTIONS }}
+            DOCS_BUILD_STRICT=${{ env.DOCS_BUILD_STRICT }}
 
       - name: Build and Push image to GHCR (tag)
         id: push_ghcr_tag
@@ -159,6 +162,7 @@ jobs:
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
             NODE_OPTIONS=${{ env.NODE_OPTIONS }}
+            DOCS_BUILD_STRICT=${{ env.DOCS_BUILD_STRICT }}
 
       - name: Build and Push image to AWS public ECR (tag)
         id: push_aws_tag
@@ -178,6 +182,7 @@ jobs:
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
             NODE_OPTIONS=${{ env.NODE_OPTIONS }}
+            DOCS_BUILD_STRICT=${{ env.DOCS_BUILD_STRICT }}
 
       - name: Build and Push image to Docker Hub (tag)
         id: push_dockerhub_tag
@@ -196,6 +201,7 @@ jobs:
             PHRASEA_REFTYPE=${{ env.PHRASEA_REFTYPE }}
             PHRASEA_DATETIME=${{ env.PHRASEA_DATETIME }}
             NODE_OPTIONS=${{ env.NODE_OPTIONS }}
+            DOCS_BUILD_STRICT=${{ env.DOCS_BUILD_STRICT }}
 
       - name: Print push summary
         if: ${{ always() }}
