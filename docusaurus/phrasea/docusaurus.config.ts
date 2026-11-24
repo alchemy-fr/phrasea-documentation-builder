@@ -22,7 +22,7 @@ const config: Config = {
     favicon: "img/favicon.ico",
     future: {
         v4: true,
-        experimental_faster: true,
+        faster: true,
     },
     markdown: {
         hooks: {

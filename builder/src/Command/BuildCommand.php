@@ -18,6 +18,9 @@ use Symfony\Component\Yaml\Yaml;
 class BuildCommand extends Command
 {
     private const string NO_LOCALE = '_';
+    private const string DEFAULT_LOCALE = 'en';
+    // The i18n.locales of docusaurus.config.ts
+    private const array LOCALES = [self::DEFAULT_LOCALE, 'fr'];
     private const string DEFAULT_PROJECT_DIR = '/srv/docusaurus/phrasea';
     private const string DEFAULT_DOC_DIR = '/srv/downloads';
     private Filesystem $filesystem;
@@ -76,6 +79,7 @@ class BuildCommand extends Command
 
         $this->filesystem->remove($projectDir . '/versioned_docs');
         $this->filesystem->remove($projectDir . '/versioned_sidebars');
+        $this->filesystem->remove($projectDir . '/i18n');
         file_put_contents($projectDir . '/versions.json', json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         $built = [];
@@ -87,6 +91,11 @@ class BuildCommand extends Command
             try {
                 $this->filesystem->remove($projectDir . '/docs');
                 $this->filesystem->mkdir($projectDir . '/docs', 0777);
+                // docs:version snapshots the current translations of every locale, they must not leak from the previous version
+                $this->filesystem->remove(array_merge(
+                    glob($projectDir . '/i18n/*/docusaurus-plugin-content-docs/current') ?: [],
+                    glob($projectDir . '/i18n/*/docusaurus-plugin-content-docs/current.json') ?: [],
+                ));
 
                 $tagDir = $docDir.'/'.$tag;
                 $mergedDir = $tagDir.'/_merged';
@@ -133,11 +142,22 @@ class BuildCommand extends Command
 
                 $this->compileFiles($tag, $projectDir, $mergedDir.'/doc', $output);
 
+                $versionName = $semver ? ($semver->major . '.' . $semver->minor) : $tag;
                 $this->runCommand(
-                    ['pnpm', 'run', 'docusaurus', 'docs:version', $semver ? ($semver->major . '.' . $semver->minor) : $tag],
+                    ['pnpm', 'run', 'docusaurus', 'docs:version', $versionName],
                     $projectDir,
                     $output
                 );
+
+                // docs:version copies current.json to version-<name>.json for the other locales only
+                $defaultLocaleTranslations = $projectDir . '/i18n/' . self::DEFAULT_LOCALE . '/docusaurus-plugin-content-docs';
+                if ($this->filesystem->exists($defaultLocaleTranslations . '/current.json')) {
+                    $this->filesystem->copy(
+                        $defaultLocaleTranslations . '/current.json',
+                        $defaultLocaleTranslations . '/version-' . $versionName . '.json',
+                        true
+                    );
+                }
 
                 $built[] = $tag;
                 $output->writeln(sprintf('<info>Version %s built successfully.</info>', $tag));
@@ -187,19 +207,19 @@ class BuildCommand extends Command
             );
             file_put_contents(
                 $projectDir . '/build/build.html',
-                '<html lang="en"><pre>'.$process->getOutput().'</pre></html>'
+                '<html lang="en"><pre>'.htmlspecialchars($process->getOutput()).'</pre></html>'
             );
             file_put_contents(
                 $projectDir . '/build/build-error.html',
-                '<html lang="en"><pre>'.$process->getErrorOutput().'</pre></html>'
+                '<html lang="en"><pre>'.htmlspecialchars($process->getErrorOutput()).'</pre></html>'
             );
             file_put_contents(
                 $projectDir . '/build/version.html',
                 sprintf(
-                    '<html lang="en"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>',
-                    getenv('PHRASEA_REFNAME'),
-                    getenv('PHRASEA_REFTYPE'),
-                    getenv('PHRASEA_DATETIME')
+                    "<html lang=\"en\"><pre>REFNAME:%s\nREFTYPE:%s\nDATETIME:%s</pre></html>",
+                    htmlspecialchars((string) getenv('PHRASEA_REFNAME')),
+                    htmlspecialchars((string) getenv('PHRASEA_REFTYPE')),
+                    htmlspecialchars((string) getenv('PHRASEA_DATETIME'))
                 )
             );
 
@@ -380,17 +400,14 @@ class BuildCommand extends Command
                         continue;
                     }
 
-                    // remove extension
-                    $dotExtension = $file->getExtension() ? ('.' . $file->getExtension()) : '';
-                    $bn = $file->getBasename($dotExtension);
+                    $filename = $file->getFilename();
                     $locale = self::NO_LOCALE;
-                    // find locale?
+                    // find locale, e.g. "foobar.fr.md"
                     $matches = [];
-                    if (preg_match('/(.*)\.(\w*)/', $bn, $matches) && count($matches) === 3) {
-                        $bn = $matches[1];
-                        $locale = $matches[2];
-                        if ($locale === 'en') {
-                            $locale = self::NO_LOCALE; // no locale for en
+                    if (preg_match('/^(.+)\.('.implode('|', self::LOCALES).')(\.[^.]+)$/', $filename, $matches)) {
+                        $filename = $matches[1].$matches[3];
+                        if ($matches[2] !== self::DEFAULT_LOCALE) {
+                            $locale = $matches[2];
                         }
                     }
 
@@ -404,11 +421,11 @@ class BuildCommand extends Command
                         $tab,
                         $file->getFilename(),
                         $subTargetDir,
-                        $bn . $dotExtension
+                        $filename
                     ));
                     $targetDir = $projectDir . '/' . $subTargetDir;
                     $this->filesystem->mkdir($targetDir, 0777);
-                    $destination = $targetDir.'/'.$bn.$dotExtension;
+                    $destination = $targetDir.'/'.$filename;
 
                     $this->filesystem->dumpFile(
                         $destination,
